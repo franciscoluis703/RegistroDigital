@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(flutter pub:*)",
+      "Bash(flutter clean:*)",
+      "Bash(find:*)",
+      "Bash(flutter build:*)",
+      "Bash(dart analyze:*)",
+      "Bash(flutter run:*)",
+      "Bash(nc localhost 34369)",
+      "Bash(pkill:*)",
+      "WebFetch(domain:educando.edu.do)",
+      "WebSearch",
+      "WebFetch(domain:hoy.com.do)",
+      "WebFetch(domain:culturadominicana.org)",
+      "Read(//home/francisco/Escritorio/registro_docente/recursos/ic_launcher/res/**)",
+      "Bash(dart run:*)",
+      "Bash(flutter:*)",
+      "Bash(npm:*)",
+      "Bash(firebase login:*)",
+      "Bash(netlify deploy:*)",
+      "Bash(netlify sites:create:*)",
+      "Read(//home/francisco/Escritorio/registro_docente/recursos/**)",
+      "Bash(sudo apt-get:*)",
+      "Bash(sudo apt-get install:*)",
+      "Read(//home/francisco/Escritorio/registro_docente/**)",
+      "Bash(netlify:*)",
+      "Read(//home/francisco/.config/Code/User/History/**)",
+      "Read(//home/francisco/.vscode/extensions/**)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
