@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import '../../../widgets/estudiante_nombre_widget.dart';
+import '../../../../data/services/horarios_supabase_service.dart';
 
 class HorarioClaseScreen extends StatefulWidget {
   const HorarioClaseScreen({super.key});
@@ -8,888 +11,934 @@ class HorarioClaseScreen extends StatefulWidget {
 }
 
 class _HorarioClaseScreenState extends State<HorarioClaseScreen> {
-  // Lista de tablas de horarios
-  final List<HorarioTable> _tablas = [
-    HorarioTable(nombre: 'Horario Principal'),
-  ];
+  final List<HorarioPeriodo> _periodos = [];
+  final _horariosService = HorariosSupabaseService();
+  bool _isLoading = true;
 
-  int _tablaActualIndex = 0;
-  bool _cambiosNoGuardados = false;
+  @override
+  void initState() {
+    super.initState();
+    _cargarHorario();
+  }
 
-  void _marcarCambio() {
-    if (!_cambiosNoGuardados) {
-      setState(() {
-        _cambiosNoGuardados = true;
-      });
+  // Cargar horario guardado o inicializar con valores por defecto
+  Future<void> _cargarHorario() async {
+    setState(() => _isLoading = true);
+
+    final configuracionJson = await _horariosService.obtenerConfiguracionHorario();
+
+    if (configuracionJson != null && configuracionJson.isNotEmpty) {
+      // Cargar horario guardado desde Supabase
+      try {
+        final List<dynamic> periodosJson = jsonDecode(configuracionJson);
+        setState(() {
+          _periodos.clear();
+          _periodos.addAll(
+            periodosJson.map((p) => HorarioPeriodo.fromJson(p)).toList(),
+          );
+          _isLoading = false;
+        });
+      } catch (e) {
+        debugPrint('Error al decodificar horario: $e');
+        _inicializarPeriodos();
+        setState(() => _isLoading = false);
+      }
+    } else {
+      // Inicializar con periodos por defecto
+      _inicializarPeriodos();
+      setState(() => _isLoading = false);
     }
   }
 
-  void _guardarCambios() {
-    // TODO: Implementar guardado en base de datos o archivo
+  void _inicializarPeriodos() {
+    // Inicializar con periodos por defecto
+    _periodos.addAll([
+      HorarioPeriodo(numero: 1, horaInicio: '8:00 AM', horaFin: '8:45 AM'),
+      HorarioPeriodo(numero: 2, horaInicio: '8:45 AM', horaFin: '9:30 AM'),
+      HorarioPeriodo(numero: 3, horaInicio: '9:30 AM', horaFin: '10:15 AM'),
+      HorarioPeriodo(
+        numero: 4,
+        horaInicio: '10:15 AM',
+        horaFin: '10:30 AM',
+        esRecreo: true,
+        nombre: 'RECREO',
+      ),
+      HorarioPeriodo(numero: 5, horaInicio: '10:30 AM', horaFin: '11:15 AM'),
+      HorarioPeriodo(numero: 6, horaInicio: '11:15 AM', horaFin: '12:00 PM'),
+      HorarioPeriodo(
+        numero: 7,
+        horaInicio: '12:00 PM',
+        horaFin: '1:00 PM',
+        esAlmuerzo: true,
+        nombre: 'ALMUERZO',
+      ),
+      HorarioPeriodo(numero: 8, horaInicio: '1:00 PM', horaFin: '1:45 PM'),
+      HorarioPeriodo(numero: 9, horaInicio: '1:45 PM', horaFin: '2:30 PM'),
+      HorarioPeriodo(numero: 10, horaInicio: '2:30 PM', horaFin: '3:15 PM'),
+    ]);
+  }
+
+  // Guardar horario en Supabase
+  Future<void> _guardarHorarioEnStorage() async {
+    try {
+      final periodosJson = _periodos.map((p) => p.toJson()).toList();
+      final configuracionJson = jsonEncode(periodosJson);
+      final success = await _horariosService.guardarConfiguracionHorario(configuracionJson);
+
+      if (!success) {
+        debugPrint('Error al guardar horario en Supabase');
+      }
+    } catch (e) {
+      debugPrint('Error al guardar horario: $e');
+    }
+  }
+
+  void _agregarPeriodo() {
     setState(() {
-      _cambiosNoGuardados = false;
+      _periodos.add(HorarioPeriodo(
+        numero: _periodos.length + 1,
+        horaInicio: '',
+        horaFin: '',
+      ));
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Horario guardado correctamente'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
+    _guardarHorarioEnStorage();
+  }
+
+  void _eliminarPeriodo(int index) {
+    setState(() {
+      _periodos.removeAt(index);
+      // Renumerar
+      for (int i = 0; i < _periodos.length; i++) {
+        _periodos[i].numero = i + 1;
+      }
+    });
+    _guardarHorarioEnStorage();
+  }
+
+  void _editarPeriodo(int index) {
+    final periodo = _periodos[index];
+
+    showDialog(
+      context: context,
+      builder: (context) => _DialogEditarPeriodo(
+        periodo: periodo,
+        onSave: () {
+          setState(() {});
+          _guardarHorarioEnStorage();
+          Navigator.pop(context);
+        },
       ),
     );
   }
 
-  void _agregarTabla() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        String nombreTabla = 'Horario ${_tablas.length + 1}';
-        return AlertDialog(
-          title: const Text('Nueva Tabla de Horario'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Nombre de la tabla',
-              hintText: 'Ej: Horario Vespertino',
-            ),
-            onChanged: (value) => nombreTabla = value,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _tablas.add(HorarioTable(
-                    nombre: nombreTabla.isEmpty
-                        ? 'Horario ${_tablas.length + 1}'
-                        : nombreTabla,
-                  ));
-                  _tablaActualIndex = _tablas.length - 1;
-                });
-                _marcarCambio();
-                Navigator.pop(context);
-              },
-              child: const Text('Crear'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _eliminarTabla() {
-    if (_tablas.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debe existir al menos una tabla de horario'),
-          backgroundColor: Colors.orange,
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Horario de Clase'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
         ),
       );
-      return;
     }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Tabla'),
-        content: Text(
-          '¿Estás seguro de eliminar "${_tablas[_tablaActualIndex].nombre}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _tablas.removeAt(_tablaActualIndex);
-                if (_tablaActualIndex >= _tablas.length) {
-                  _tablaActualIndex = _tablas.length - 1;
-                }
-              });
-              _marcarCambio();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tabla eliminada'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _renombrarTabla() {
-    String nuevoNombre = _tablas[_tablaActualIndex].nombre;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Renombrar Tabla'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Nuevo nombre',
-            ),
-            controller: TextEditingController(text: nuevoNombre),
-            onChanged: (value) => nuevoNombre = value,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _tablas[_tablaActualIndex].nombre = nuevoNombre;
-                });
-                _marcarCambio();
-                Navigator.pop(context);
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<bool> _confirmarSalida() async {
-    if (!_cambiosNoGuardados) return true;
-
-    final resultado = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cambios sin guardar'),
-        content: const Text(
-          '¿Deseas guardar los cambios antes de salir?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Salir sin guardar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              _guardarCambios();
-              Navigator.pop(context, true);
-            },
-            child: const Text('Guardar y salir'),
-          ),
-        ],
-      ),
-    );
-
-    return resultado ?? false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-
-        final shouldPop = await _confirmarSalida();
-        if (shouldPop && context.mounted) {
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Horario de Clase'),
         backgroundColor: Colors.white,
-        appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('Horario de Clase'),
-            if (_cambiosNoGuardados) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Sin guardar',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ],
-        ),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         actions: [
-          if (_cambiosNoGuardados)
-            IconButton(
-              icon: const Icon(Icons.save),
-              tooltip: 'Guardar cambios',
-              onPressed: _guardarCambios,
-            ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
-              switch (value) {
-                case 'renombrar':
-                  _renombrarTabla();
-                  break;
-                case 'eliminar':
-                  _eliminarTabla();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'renombrar',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text('Renombrar tabla'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'eliminar',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, size: 20, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Eliminar tabla', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: _guardarHorario,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: _agregarPeriodo,
+            tooltip: 'Agregar período',
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Selector de tabla
-          if (_tablas.length > 1)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border(
-                  bottom: BorderSide(color: Colors.orange.shade200, width: 2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios),
-                    onPressed: _tablaActualIndex > 0
-                        ? () {
-                            setState(() {
-                              _tablaActualIndex--;
-                            });
-                          }
-                        : null,
-                  ),
-                  Expanded(
-                    child: Text(
-                      _tablas[_tablaActualIndex].nombre,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward_ios),
-                    onPressed: _tablaActualIndex < _tablas.length - 1
-                        ? () {
-                            setState(() {
-                              _tablaActualIndex++;
-                            });
-                          }
-                        : null,
-                  ),
-                ],
-              ),
-            ),
-
-          // Tabla de horario
-          Expanded(
-            child: _HorarioTableWidget(
-              horarioTable: _tablas[_tablaActualIndex],
-              onUpdate: () {
-                setState(() {});
-                _marcarCambio();
-              },
-            ),
-          ),
-
-          // Barra de acciones inferior
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _agregarTabla,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Nueva Tabla'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange,
-                      side: const BorderSide(color: Colors.orange, width: 2),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: _guardarCambios,
-                    icon: const Icon(Icons.save),
-                    label: Text(_cambiosNoGuardados
-                        ? 'Guardar Cambios'
-                        : 'Todo Guardado'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _cambiosNoGuardados
-                          ? Colors.green
-                          : Colors.grey,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      ),
-    );
-  }
-}
-
-class HorarioTable {
-  String nombre;
-  List<List<HorarioCelda>> celdas;
-
-  HorarioTable({required this.nombre})
-      : celdas = List.generate(
-          10,
-          (_) => List.generate(
-            6,
-            (_) => HorarioCelda(),
-          ),
-        );
-}
-
-class HorarioCelda {
-  String texto;
-  Color color;
-  String? horaInicio;
-  String? horaFin;
-  bool alarmaActiva;
-
-  HorarioCelda({
-    this.texto = '',
-    this.color = Colors.white,
-    this.horaInicio,
-    this.horaFin,
-    this.alarmaActiva = false,
-  });
-}
-
-class _HorarioTableWidget extends StatefulWidget {
-  final HorarioTable horarioTable;
-  final VoidCallback onUpdate;
-
-  const _HorarioTableWidget({
-    required this.horarioTable,
-    required this.onUpdate,
-  });
-
-  @override
-  State<_HorarioTableWidget> createState() => _HorarioTableWidgetState();
-}
-
-class _HorarioTableWidgetState extends State<_HorarioTableWidget> {
-  final List<String> _diasSemana = [
-    'Hora',
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-  ];
-
-  final List<Color> _coloresDisponibles = [
-    Colors.white,
-    Colors.red.shade100,
-    Colors.blue.shade100,
-    Colors.green.shade100,
-    Colors.yellow.shade100,
-    Colors.orange.shade100,
-    Colors.purple.shade100,
-    Colors.pink.shade100,
-    Colors.teal.shade100,
-    Colors.cyan.shade100,
-  ];
-
-  Future<void> _seleccionarHora(BuildContext context, bool esInicio, Function(String) onSelected) async {
-    final TimeOfDay? tiempo = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-          child: child!,
-        );
-      },
-    );
-
-    if (tiempo != null && context.mounted) {
-      final hora = tiempo.format(context);
-      onSelected(hora);
-    }
-  }
-
-  void _editarHorario(int fila) {
-    final celda = widget.horarioTable.celdas[fila][0];
-    String? horaInicio = celda.horaInicio;
-    String? horaFin = celda.horaFin;
-    bool alarmaActiva = celda.alarmaActiva;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: Row(
-                children: [
-                  const Icon(Icons.access_time, color: Colors.orange),
-                  const SizedBox(width: 8),
-                  Text('Configurar Período ${fila + 1}'),
-                ],
-              ),
-              content: SizedBox(
-                width: 300,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Horario del período',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 16),
-                    // Hora de inicio
-                    InkWell(
-                      onTap: () async {
-                        await _seleccionarHora(context, true, (hora) {
-                          setStateDialog(() {
-                            horaInicio = hora;
-                          });
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.schedule, color: Colors.blue),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Hora de inicio',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                                Text(
-                                  horaInicio ?? 'Sin configurar',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.edit, size: 20, color: Colors.grey),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Hora de fin
-                    InkWell(
-                      onTap: () async {
-                        await _seleccionarHora(context, false, (hora) {
-                          setStateDialog(() {
-                            horaFin = hora;
-                          });
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.schedule, color: Colors.orange),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Hora de fin',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                                Text(
-                                  horaFin ?? 'Sin configurar',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.edit, size: 20, color: Colors.grey),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    // Alarma
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: alarmaActiva ? Colors.orange.shade50 : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: alarmaActiva ? Colors.orange : Colors.grey.shade300,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.alarm,
-                            color: alarmaActiva ? Colors.orange : Colors.grey,
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Alarma',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  'Notificar al iniciar el período',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: alarmaActiva,
-                            onChanged: (value) {
-                              setStateDialog(() {
-                                alarmaActiva = value;
-                              });
-                            },
-                            activeTrackColor: Colors.orange.shade300,
-                            thumbColor: WidgetStateProperty.resolveWith<Color>(
-                              (states) => states.contains(WidgetState.selected)
-                                  ? Colors.orange
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    // Limpiar configuración
-                    widget.horarioTable.celdas[fila][0].horaInicio = null;
-                    widget.horarioTable.celdas[fila][0].horaFin = null;
-                    widget.horarioTable.celdas[fila][0].alarmaActiva = false;
-                    widget.onUpdate();
-                    Navigator.pop(context);
-                  },
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Limpiar'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    widget.horarioTable.celdas[fila][0].horaInicio = horaInicio;
-                    widget.horarioTable.celdas[fila][0].horaFin = horaFin;
-                    widget.horarioTable.celdas[fila][0].alarmaActiva = alarmaActiva;
-                    widget.onUpdate();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _editarCelda(int fila, int columna) {
-    // Si es la columna de Hora (columna 0), mostrar editor de horario
-    if (columna == 0) {
-      _editarHorario(fila);
-      return;
-    }
-
-    final celda = widget.horarioTable.celdas[fila][columna];
-    String nuevoTexto = celda.texto;
-    Color nuevoColor = celda.color;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: Text('Editar ${_diasSemana[columna]} - Hora ${fila + 1}'),
-              content: SizedBox(
-                width: 300,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Materia/Actividad',
-                        hintText: 'Ej: Matemáticas',
-                      ),
-                      controller: TextEditingController(text: nuevoTexto),
-                      onChanged: (value) => nuevoTexto = value,
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Color de fondo:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _coloresDisponibles.map((color) {
-                        final isSelected = color == nuevoColor;
-                        return GestureDetector(
-                          onTap: () {
-                            setStateDialog(() {
-                              nuevoColor = color;
-                            });
-                          },
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: color,
-                              border: Border.all(
-                                color: isSelected ? Colors.black : Colors.grey,
-                                width: isSelected ? 3 : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: isSelected
-                                ? const Icon(Icons.check, size: 20)
-                                : null,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    // Limpiar celda
-                    widget.horarioTable.celdas[fila][columna].texto = '';
-                    widget.horarioTable.celdas[fila][columna].color =
-                        Colors.white;
-                    widget.onUpdate();
-                    Navigator.pop(context);
-                  },
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Limpiar'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    widget.horarioTable.celdas[fila][columna].texto =
-                        nuevoTexto;
-                    widget.horarioTable.celdas[fila][columna].color =
-                        nuevoColor;
-                    widget.onUpdate();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildHorarioCell(HorarioCelda celda, int fila) {
-    final tieneHorario = celda.horaInicio != null && celda.horaFin != null;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          '${fila + 1}°',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        if (tieneHorario) ...[
-          const SizedBox(height: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.access_time, size: 10, color: Colors.blue),
-              const SizedBox(width: 2),
-              Text(
-                celda.horaInicio!,
-                style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          Text(
-            celda.horaFin!,
-            style: const TextStyle(fontSize: 8, color: Colors.grey),
-          ),
-        ],
-        if (celda.alarmaActiva)
-          const Icon(Icons.alarm, size: 12, color: Colors.orange),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Container(
+      body: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Encabezado con días de la semana
+              // Encabezado
               Row(
-                children: _diasSemana.asMap().entries.map((entry) {
-                  return Container(
-                    width: 120,
+                children: [
+                  Container(
+                    width: 60,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade700,
-                      border: Border.all(color: Colors.black, width: 1),
+                      color: const Color(0xFFbfa661),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                      ),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      entry.value,
-                      style: const TextStyle(
+                    child: const Text(
+                      'Hora',
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
                         color: Colors.white,
+                        fontSize: 14,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  );
-                }).toList(),
-              ),
-              // Filas de horario
-              ...List.generate(10, (fila) {
-                return Row(
-                  children: List.generate(6, (columna) {
-                    final celda = widget.horarioTable.celdas[fila][columna];
-                    return GestureDetector(
-                      onTap: () => _editarCelda(fila, columna),
+                  ),
+                  ...[
+                    'Lunes',
+                    'Martes',
+                    'Miércoles',
+                    'Jueves',
+                    'Viernes'
+                  ].asMap().entries.map((entry) {
+                    final isLast = entry.key == 4;
+                    return Expanded(
                       child: Container(
-                        width: 120,
-                        height: 60,
+                        height: 50,
                         decoration: BoxDecoration(
-                          color: celda.color,
-                          border: Border.all(color: Colors.black, width: 1),
+                          color: const Color(0xFFbfa661),
+                          borderRadius: isLast
+                              ? const BorderRadius.only(
+                                  topRight: Radius.circular(12),
+                                )
+                              : null,
                         ),
                         alignment: Alignment.center,
-                        padding: const EdgeInsets.all(4),
-                        child: columna == 0
-                            ? _buildHorarioCell(celda, fila)
-                            : Text(
-                                celda.texto,
-                                style: const TextStyle(fontSize: 12),
-                                textAlign: TextAlign.center,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        child: Text(
+                          entry.value,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     );
-                  }),
+                  }).toList(),
+                ],
+              ),
+              // Filas de períodos
+              ...List.generate(_periodos.length, (index) {
+                final periodo = _periodos[index];
+                final isLast = index == _periodos.length - 1;
+
+                return Row(
+                  children: [
+                    // Columna de hora
+                    GestureDetector(
+                      onTap: () => _editarPeriodo(index),
+                      child: Container(
+                        width: 60,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: periodo.esRecreo || periodo.esAlmuerzo
+                              ? Colors.orange[100]
+                              : Colors.grey[200],
+                          border: Border(
+                            left: BorderSide(color: Colors.grey[300]!),
+                            right: BorderSide(color: Colors.grey[300]!),
+                            bottom: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          borderRadius: isLast
+                              ? const BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                )
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${periodo.numero}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (periodo.alarmaActiva)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4),
+                                    child: Icon(
+                                      Icons.alarm,
+                                      size: 14,
+                                      color: Colors.orange[700],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if (periodo.horaInicio.isNotEmpty)
+                              Text(
+                                '${periodo.horaInicio}\n${periodo.horaFin}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Celdas de días
+                    ...List.generate(5, (diaIndex) {
+                      final isLastDay = diaIndex == 4;
+                      final colorCelda = periodo.colores[diaIndex];
+
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: periodo.esRecreo || periodo.esAlmuerzo
+                              ? null
+                              : () => _editarMateria(index, diaIndex),
+                          child: Container(
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: periodo.esRecreo || periodo.esAlmuerzo
+                                  ? Colors.orange[100]
+                                  : colorCelda?.withValues(alpha: 0.3) ?? Colors.white,
+                              border: Border(
+                                right: BorderSide(color: Colors.grey[300]!),
+                                bottom: BorderSide(color: Colors.grey[300]!),
+                                left: colorCelda != null
+                                    ? BorderSide(color: colorCelda, width: 4)
+                                    : BorderSide.none,
+                              ),
+                              borderRadius: isLast && isLastDay
+                                  ? const BorderRadius.only(
+                                      bottomRight: Radius.circular(12),
+                                    )
+                                  : null,
+                            ),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(8),
+                            child: Text(
+                              periodo.esRecreo || periodo.esAlmuerzo
+                                  ? periodo.nombre
+                                  : periodo.materias[diaIndex],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: periodo.esRecreo ||
+                                        periodo.esAlmuerzo
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                color: periodo.esRecreo || periodo.esAlmuerzo
+                                    ? Colors.orange[900]
+                                    : Colors.black87,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
                 );
               }),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: ElevatedButton.icon(
+          onPressed: _guardarHorario,
+          icon: const Icon(Icons.save),
+          label: const Text('Guardar Horario'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFbfa661),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _editarMateria(int periodoIndex, int diaIndex) {
+    final periodo = _periodos[periodoIndex];
+    final controller = TextEditingController(text: periodo.materias[diaIndex]);
+    Color? colorSeleccionado = periodo.colores[diaIndex];
+
+    final List<String> diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text('Período ${periodo.numero} - ${diasSemana[diaIndex]}'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Campo de materia
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Materia',
+                      hintText: 'Ej: Matemática, Español...',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.book),
+                    ),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 24),
+                  // Selector de color
+                  const Text(
+                    'Color de identificación',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      // Opción sin color
+                      _buildColorOption(
+                        context,
+                        null,
+                        colorSeleccionado,
+                        'Sin color',
+                        () {
+                          setDialogState(() {
+                            colorSeleccionado = null;
+                          });
+                        },
+                      ),
+                      // Colores disponibles
+                      ...[
+                        Colors.red[300]!,
+                        Colors.pink[300]!,
+                        Colors.purple[300]!,
+                        Colors.deepPurple[300]!,
+                        Colors.indigo[300]!,
+                        Colors.blue[300]!,
+                        Colors.lightBlue[300]!,
+                        Colors.cyan[300]!,
+                        Colors.teal[300]!,
+                        Colors.green[300]!,
+                        Colors.lightGreen[300]!,
+                        Colors.lime[300]!,
+                        Colors.yellow[300]!,
+                        Colors.amber[300]!,
+                        Colors.orange[300]!,
+                        Colors.deepOrange[300]!,
+                        Colors.brown[300]!,
+                        Colors.grey[300]!,
+                      ].map((color) {
+                        return _buildColorOption(
+                          context,
+                          color,
+                          colorSeleccionado,
+                          '',
+                          () {
+                            setDialogState(() {
+                              colorSeleccionado = color;
+                            });
+                          },
+                        );
+                      }),
+                    ],
+                  ),
+                  if (colorSeleccionado != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorSeleccionado!.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: colorSeleccionado!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: colorSeleccionado!),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Vista previa del color seleccionado',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  controller.dispose();
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    periodo.materias[diaIndex] = controller.text;
+                    periodo.colores[diaIndex] = colorSeleccionado;
+                  });
+                  _guardarHorarioEnStorage();
+                  controller.dispose();
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFbfa661),
+                ),
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildColorOption(
+    BuildContext context,
+    Color? color,
+    Color? colorSeleccionado,
+    String label,
+    VoidCallback onTap,
+  ) {
+    final isSelected = color == colorSeleccionado;
+
+    if (color == null) {
+      // Opción "Sin color"
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(
+              color: isSelected ? Colors.blue : Colors.grey[300]!,
+              width: isSelected ? 3 : 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Stack(
+            children: [
+              // Línea diagonal para indicar "sin color"
+              CustomPaint(
+                size: const Size(50, 50),
+                painter: _DiagonalLinePainter(),
+              ),
+              if (isSelected)
+                const Center(
+                  child: Icon(
+                    Icons.check,
+                    color: Colors.blue,
+                    size: 24,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: color,
+          border: Border.all(
+            color: isSelected ? Colors.black : Colors.grey[400]!,
+            width: isSelected ? 3 : 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.5),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
+        ),
+        child: isSelected
+            ? const Center(
+                child: Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Future<void> _guardarHorario() async {
+    await _guardarHorarioEnStorage();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Horario guardado correctamente en la base de datos'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+}
+
+// Painter para la línea diagonal de "sin color"
+class _DiagonalLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      const Offset(5, 5),
+      Offset(size.width - 5, size.height - 5),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class HorarioPeriodo {
+  int numero;
+  String horaInicio;
+  String horaFin;
+  List<String> materias;
+  List<Color?> colores;  // Color para cada día
+  bool esRecreo;
+  bool esAlmuerzo;
+  String nombre;
+  bool alarmaActiva;
+
+  HorarioPeriodo({
+    required this.numero,
+    required this.horaInicio,
+    required this.horaFin,
+    this.esRecreo = false,
+    this.esAlmuerzo = false,
+    this.nombre = '',
+    this.alarmaActiva = false,
+  }) : materias = List.generate(5, (_) => ''),
+       colores = List.generate(5, (_) => null);
+
+  // Convertir a JSON para guardar
+  Map<String, dynamic> toJson() {
+    return {
+      'numero': numero,
+      'horaInicio': horaInicio,
+      'horaFin': horaFin,
+      'materias': materias,
+      'colores': colores.map((c) => c?.toARGB32()).toList(),
+      'esRecreo': esRecreo,
+      'esAlmuerzo': esAlmuerzo,
+      'nombre': nombre,
+      'alarmaActiva': alarmaActiva,
+    };
+  }
+
+  // Crear desde JSON
+  factory HorarioPeriodo.fromJson(Map<String, dynamic> json) {
+    final periodo = HorarioPeriodo(
+      numero: json['numero'] ?? 0,
+      horaInicio: json['horaInicio'] ?? '',
+      horaFin: json['horaFin'] ?? '',
+      esRecreo: json['esRecreo'] ?? false,
+      esAlmuerzo: json['esAlmuerzo'] ?? false,
+      nombre: json['nombre'] ?? '',
+      alarmaActiva: json['alarmaActiva'] ?? false,
+    );
+
+    // Restaurar materias
+    if (json['materias'] != null) {
+      periodo.materias = List<String>.from(json['materias']);
+    }
+
+    // Restaurar colores
+    if (json['colores'] != null) {
+      periodo.colores = (json['colores'] as List)
+          .map((c) => c != null ? Color(c as int) : null)
+          .toList();
+    }
+
+    return periodo;
+  }
+}
+
+class _DialogEditarPeriodo extends StatefulWidget {
+  final HorarioPeriodo periodo;
+  final VoidCallback onSave;
+
+  const _DialogEditarPeriodo({
+    required this.periodo,
+    required this.onSave,
+  });
+
+  @override
+  State<_DialogEditarPeriodo> createState() => _DialogEditarPeriodoState();
+}
+
+class _DialogEditarPeriodoState extends State<_DialogEditarPeriodo> {
+  late bool esRecreo;
+  late bool esAlmuerzo;
+  late String nombre;
+  late bool alarmaActiva;
+
+  @override
+  void initState() {
+    super.initState();
+    esRecreo = widget.periodo.esRecreo;
+    esAlmuerzo = widget.periodo.esAlmuerzo;
+    nombre = widget.periodo.nombre;
+    alarmaActiva = widget.periodo.alarmaActiva;
+  }
+
+  Future<void> _seleccionarHora(bool esInicio) async {
+    final TimeOfDay? tiempo = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (tiempo != null && context.mounted) {
+      final hora = tiempo.format(context);
+      setState(() {
+        if (esInicio) {
+          widget.periodo.horaInicio = hora;
+        } else {
+          widget.periodo.horaFin = hora;
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Configurar Período ${widget.periodo.numero}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tipo de período
+            const Text(
+              'Tipo de período',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: CheckboxListTile(
+                    title: const Text('Recreo'),
+                    value: esRecreo,
+                    onChanged: (value) {
+                      setState(() {
+                        esRecreo = value ?? false;
+                        if (esRecreo) {
+                          esAlmuerzo = false;
+                          nombre = 'RECREO';
+                        }
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: CheckboxListTile(
+                    title: const Text('Almuerzo'),
+                    value: esAlmuerzo,
+                    onChanged: (value) {
+                      setState(() {
+                        esAlmuerzo = value ?? false;
+                        if (esAlmuerzo) {
+                          esRecreo = false;
+                          nombre = 'ALMUERZO';
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Horario
+            const Text(
+              'Horario',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _seleccionarHora(true),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Inicio',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                          Text(
+                            widget.periodo.horaInicio.isEmpty
+                                ? 'Seleccionar'
+                                : widget.periodo.horaInicio,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _seleccionarHora(false),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fin',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                          Text(
+                            widget.periodo.horaFin.isEmpty
+                                ? 'Seleccionar'
+                                : widget.periodo.horaFin,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Alarma
+            Container(
+              decoration: BoxDecoration(
+                color: alarmaActiva ? Colors.orange[50] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: alarmaActiva ? Colors.orange[300]! : Colors.grey[300]!,
+                ),
+              ),
+              child: SwitchListTile(
+                title: Row(
+                  children: [
+                    Icon(
+                      Icons.alarm,
+                      color: alarmaActiva ? Colors.orange[700] : Colors.grey[600],
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Activar alarma',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                subtitle: Text(
+                  alarmaActiva
+                      ? 'La alarma sonará al inicio de este período'
+                      : 'Sin alarma configurada',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                value: alarmaActiva,
+                activeColor: Colors.orange[700],
+                onChanged: (value) {
+                  setState(() {
+                    alarmaActiva = value;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            widget.periodo.esRecreo = esRecreo;
+            widget.periodo.esAlmuerzo = esAlmuerzo;
+            widget.periodo.nombre = nombre;
+            widget.periodo.alarmaActiva = alarmaActiva;
+            widget.onSave();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFbfa661),
+          ),
+          child: const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

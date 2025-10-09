@@ -17,7 +17,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
   final _asistenciaService = AsistenciaService();
   final _estudiantesService = EstudiantesService();
   int mesActualIndex = 0;
-  List<String> _nombresEstudiantes = [];
+  final List<String> _nombresEstudiantes = [];
 
   void _crear10Meses(BuildContext context, String curso, String seccion) {
     String mesSeleccionado = 'Agosto';
@@ -60,22 +60,22 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      border: Border.all(color: Colors.blue.shade200),
+                      color: Colors.grey[200],
+                      border: Border.all(color: Colors.grey[400]!),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                            Icon(Icons.info_outline, size: 16, color: Colors.grey[700]),
                             const SizedBox(width: 8),
                             Text(
                               'Se crearán los meses:',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
+                                color: Colors.grey[700],
                               ),
                             ),
                           ],
@@ -127,7 +127,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: const Color(0xFFbfa661),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Crear 10 Meses'),
@@ -208,9 +208,9 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: Colors.grey[200],
                     border: Border(
-                      bottom: BorderSide(color: Colors.blue.shade200, width: 2),
+                      bottom: BorderSide(color: Colors.grey[400]!, width: 2),
                     ),
                   ),
                   child: Row(
@@ -235,7 +235,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue,
+                                color: Colors.black,
                               ),
                             ),
                             Text(
@@ -271,7 +271,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                         Icon(
                           Icons.calendar_month,
                           size: 80,
-                          color: Colors.blue.shade300,
+                          color: Colors.grey[400],
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -298,7 +298,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                           icon: const Icon(Icons.edit_calendar),
                           label: const Text('Editar Asistencia'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: const Color(0xFFbfa661),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 32,
@@ -441,7 +441,9 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
 
   // Guardar automáticamente los datos
   Future<void> _guardarAutomaticamente() async {
+    print('🔵 _guardarAutomaticamente llamado. curso=$_cursoActual, seccion=$_seccionActual');
     if (_cursoActual != null && _seccionActual != null) {
+      print('✅ Guardando datos...');
       final diasMesTextos = diasMesControllers.map((c) => c.text).toList();
       await _asistenciaService.guardarDatosAsistencia(
         curso: _cursoActual!,
@@ -451,6 +453,9 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
         feriados: feriados,
         diasMes: diasMesTextos,
       );
+      print('✅ Datos guardados');
+    } else {
+      print('❌ No se puede guardar: curso o sección es null');
     }
   }
 
@@ -493,11 +498,27 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Obtener curso y sección del contexto
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
-    if (args != null && _cursoActual == null) {
-      _cursoActual = widget.materia;
-      _seccionActual = 'A'; // Ajustar según tu lógica
+    // Inicializar curso y sección si aún no están configurados
+    if (_cursoActual == null) {
+      // Obtener el curso desde widget.materia (ej: "TERCERO A - MATEMATICA")
+      // Extraer solo la parte del curso (ej: "Tercero A")
+      final materiaParts = widget.materia.split(' - ');
+      if (materiaParts.isNotEmpty) {
+        _cursoActual = materiaParts[0].trim(); // "TERCERO A"
+
+        // Extraer la sección desde el curso (última letra)
+        final cursoParts = _cursoActual!.split(' ');
+        if (cursoParts.length >= 2) {
+          _seccionActual = cursoParts.last; // "A"
+        } else {
+          _seccionActual = 'A'; // Por defecto
+        }
+      } else {
+        _cursoActual = widget.materia;
+        _seccionActual = 'A';
+      }
+
+      print('✅ Curso y sección configurados: curso=$_cursoActual, seccion=$_seccionActual');
       _cargarDatos();
     }
   }
@@ -748,6 +769,138 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
     return Colors.white;
   }
 
+  void _verificarAsistencias(BuildContext context) {
+    List<String> problemas = [];
+    int diasConAsistencia = 0;
+
+    // Verificar cada día del mes
+    for (int dia = 0; dia < 21; dia++) {
+      bool hayAsistenciaEsteDia = false;
+
+      // Verificar si hay al menos una asistencia registrada en este día
+      for (var fila in asistencia) {
+        if (fila.length > dia && fila[dia].isNotEmpty) {
+          hayAsistenciaEsteDia = true;
+          break;
+        }
+      }
+
+      if (hayAsistenciaEsteDia) {
+        diasConAsistencia++;
+
+        // Verificar que todos los estudiantes tengan registro en este día
+        for (int i = 0; i < asistencia.length; i++) {
+          if (asistencia[i].length <= dia || asistencia[i][dia].isEmpty) {
+            problemas.add('Estudiante ${i + 1}: falta registro en día ${dia + 1}');
+          }
+        }
+      }
+    }
+
+    // Verificar que haya al menos algunos días registrados
+    if (diasConAsistencia == 0) {
+      problemas.add('No hay ningún día con asistencia registrada');
+    }
+
+    // Verificar feriados
+    int feriadosRegistrados = feriados.values.where((f) => f.isNotEmpty).length;
+
+    // Mostrar resultados
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              problemas.isEmpty ? Icons.check_circle : Icons.warning_amber_rounded,
+              color: problemas.isEmpty ? Colors.green : Colors.orange,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(problemas.isEmpty ? 'Verificación Exitosa' : 'Problemas Encontrados'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Resumen
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Resumen:',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('• Días con asistencia: $diasConAsistencia/21'),
+                    Text('• Estudiantes: ${asistencia.length}'),
+                    Text('• Feriados registrados: $feriadosRegistrados'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Problemas encontrados
+              if (problemas.isNotEmpty) ...[
+                const Text(
+                  'Problemas encontrados:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+                ),
+                const SizedBox(height: 8),
+                ...problemas.take(10).map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(p, style: const TextStyle(fontSize: 14))),
+                    ],
+                  ),
+                )),
+                if (problemas.length > 10)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '... y ${problemas.length - 10} problema(s) más',
+                      style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                    ),
+                  ),
+              ] else ...[
+                const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '¡Excelente! No se encontraron inconsistencias en el registro de asistencias.',
+                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _imprimirAsistencia(BuildContext context) async {
     final pdf = pw.Document();
 
@@ -849,18 +1002,15 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
         elevation: 0,
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: _guardarAutomaticamente,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Implementar verificación de asistencias
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Funcionalidad de verificación en desarrollo'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              },
+              onPressed: () => _verificarAsistencias(context),
               icon: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
               label: const Text(
                 'Verificar',
@@ -893,25 +1043,25 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: Colors.blue[100],
-                  border: Border.all(color: Colors.blue, width: 2),
+                  color: Colors.grey[200],
+                  border: Border.all(color: Colors.grey[400]!, width: 2),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue[900]),
+                    Icon(Icons.info_outline, color: Colors.grey[700]),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Pasando lista para el día ${columnaActiva! + 1}\nToca los números de estudiantes para marcar asistencia',
                         style: TextStyle(
-                          color: Colors.blue[900],
+                          color: Colors.grey[700],
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
-                      color: Colors.blue[900],
+                      color: Colors.grey[700],
                       onPressed: () {
                         setState(() {
                           columnaActiva = null;
@@ -933,22 +1083,22 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                border: Border.all(color: Colors.blue.shade200),
+                color: Colors.grey[200],
+                border: Border.all(color: Colors.grey[400]!),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                      Icon(Icons.info_outline, size: 16, color: Colors.grey[700]),
                       const SizedBox(width: 8),
                       Text(
                         'Leyenda de Porcentaje de Asistencia',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
+                          color: Colors.grey[700],
                         ),
                       ),
                     ],
@@ -971,7 +1121,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black, width: 2),
+                  border: Border.all(color: Colors.grey[400]!, width: 1),
                 ),
                 child: Column(
                   children: [
@@ -979,7 +1129,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                     Container(
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.black, width: 2),
+                          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                         ),
                       ),
                       child: Row(
@@ -990,7 +1140,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                             decoration: BoxDecoration(
                               color: Colors.grey[300],
                               border: Border(
-                                right: BorderSide(color: Colors.black, width: 2),
+                                right: BorderSide(color: Colors.grey[400]!, width: 1),
                               ),
                             ),
                             child: const Text(
@@ -1021,7 +1171,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                       decoration: BoxDecoration(
                         color: Colors.grey[300],
                         border: Border(
-                          bottom: BorderSide(color: Colors.black, width: 2),
+                          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                         ),
                       ),
                       child: const Text(
@@ -1051,7 +1201,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 35,
                                     decoration: BoxDecoration(
                                       color: Colors.grey[300],
-                                      border: Border.all(color: Colors.black),
+                                      border: Border.all(color: Colors.grey[400]!),
                                     ),
                                     alignment: Alignment.center,
                                     child: const Text(
@@ -1075,9 +1225,9 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                           color: feriados.containsKey(index)
                                               ? Colors.orange[300]
                                               : (columnaActiva == index
-                                                  ? Colors.blue[300]
+                                                  ? Colors.grey[400]
                                                   : Colors.grey[300]),
-                                          border: Border.all(color: Colors.black),
+                                          border: Border.all(color: Colors.grey[400]!),
                                         ),
                                         alignment: Alignment.center,
                                         child: Column(
@@ -1117,9 +1267,9 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                         color: feriados.containsKey(20)
                                             ? Colors.orange[300]
                                             : (columnaActiva == 20
-                                                ? Colors.blue[300]
+                                                ? Colors.grey[400]
                                                 : Colors.grey[300]),
-                                        border: Border.all(color: Colors.black),
+                                        border: Border.all(color: Colors.grey[400]!),
                                       ),
                                       alignment: Alignment.center,
                                       child: Column(
@@ -1152,7 +1302,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 35,
                                     decoration: BoxDecoration(
                                       color: Colors.grey[300],
-                                      border: Border.all(color: Colors.black),
+                                      border: Border.all(color: Colors.grey[400]!),
                                     ),
                                     alignment: Alignment.center,
                                     child: const Text(
@@ -1169,7 +1319,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 35,
                                     decoration: BoxDecoration(
                                       color: Colors.grey[300],
-                                      border: Border.all(color: Colors.black),
+                                      border: Border.all(color: Colors.grey[400]!),
                                     ),
                                     alignment: Alignment.center,
                                     child: const Text(
@@ -1192,7 +1342,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 30,
                                     decoration: BoxDecoration(
                                       color: Colors.grey[200],
-                                      border: Border.all(color: Colors.black),
+                                      border: Border.all(color: Colors.grey[400]!),
                                     ),
                                   ),
                                   // Campos de texto para días del mes (1-20)
@@ -1203,10 +1353,8 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                       height: 30,
                                       decoration: BoxDecoration(
                                         border: Border.all(
-                                          color: columnaActiva == index
-                                              ? Colors.blue
-                                              : Colors.black,
-                                          width: columnaActiva == index ? 2 : 1,
+                                          color: Colors.grey[400]!,
+                                          width: 1,
                                         ),
                                         color: Colors.white,
                                       ),
@@ -1236,10 +1384,8 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 30,
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: columnaActiva == 20
-                                            ? Colors.blue
-                                            : Colors.black,
-                                        width: columnaActiva == 20 ? 2 : 1,
+                                        color: Colors.grey[400]!,
+                                        width: 1,
                                       ),
                                       color: Colors.white,
                                     ),
@@ -1268,7 +1414,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 30,
                                     decoration: BoxDecoration(
                                       color: Colors.grey[200],
-                                      border: Border.all(color: Colors.black),
+                                      border: Border.all(color: Colors.grey[400]!),
                                     ),
                                   ),
                                   Container(
@@ -1276,7 +1422,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                     height: 30,
                                     decoration: BoxDecoration(
                                       color: Colors.grey[200],
-                                      border: Border.all(color: Colors.black),
+                                      border: Border.all(color: Colors.grey[400]!),
                                     ),
                                   ),
                                 ],
@@ -1286,32 +1432,23 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                               ...List.generate(40, (diaIndex) {
                                 return Row(
                                   children: [
-                                    // Columna de días (1-40) - clickeable cuando hay columna activa
-                                    GestureDetector(
-                                      onTap: columnaActiva != null
-                                          ? () {
-                                              _cambiarEstado(
-                                                  diaIndex, columnaActiva!);
-                                            }
-                                          : null,
+                                    // Columna de días (1-40) - clickeable para ver nombre
+                                    SizedBox(
+                                      width: 50,
+                                      height: 30,
                                       child: Container(
-                                        width: 50,
-                                        height: 30,
                                         decoration: BoxDecoration(
-                                          color: columnaActiva != null
-                                              ? Colors.blue[50]
-                                              : Colors.white,
-                                          border: Border.all(color: Colors.black),
+                                          border: Border.all(color: Colors.grey[400]!),
                                         ),
-                                        alignment: Alignment.center,
                                         child: EstudianteNombreWidget(
                                           numero: diaIndex + 1,
+                                          backgroundColor: columnaActiva != null
+                                              ? Colors.grey[100]
+                                              : Colors.white,
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 11,
-                                            color: columnaActiva != null
-                                                ? Colors.blue[900]
-                                                : Colors.black,
+                                            color: Colors.black,
                                           ),
                                           textAlign: TextAlign.center,
                                         ),
@@ -1346,12 +1483,8 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                           height: 30,
                                           decoration: BoxDecoration(
                                             border: Border.all(
-                                              color: columnaActiva == colIndex
-                                                  ? Colors.blue
-                                                  : Colors.black,
-                                              width: columnaActiva == colIndex
-                                                  ? 2
-                                                  : 1,
+                                              color: Colors.grey[400]!,
+                                              width: 1,
                                             ),
                                             color: feriados.containsKey(colIndex)
                                                 ? Colors.orange[100]
@@ -1406,10 +1539,8 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                         height: 30,
                                         decoration: BoxDecoration(
                                           border: Border.all(
-                                            color: columnaActiva == 20
-                                                ? Colors.blue
-                                                : Colors.black,
-                                            width: columnaActiva == 20 ? 2 : 1,
+                                            color: Colors.grey[400]!,
+                                            width: 1,
                                           ),
                                           color: feriados.containsKey(20)
                                               ? Colors.orange[100]
@@ -1442,7 +1573,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                       width: 35,
                                       height: 30,
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.black),
+                                        border: Border.all(color: Colors.grey[400]!),
                                         color: Colors.grey[200],
                                       ),
                                       alignment: Alignment.center,
@@ -1459,7 +1590,7 @@ class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
                                       width: 35,
                                       height: 30,
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.black),
+                                        border: Border.all(color: Colors.grey[400]!),
                                         color: _getColorPorcentaje(_calcularPorcentaje(diaIndex)),
                                       ),
                                       alignment: Alignment.center,
@@ -1533,7 +1664,7 @@ class _LeyendaItem extends StatelessWidget {
           height: 16,
           decoration: BoxDecoration(
             color: color,
-            border: Border.all(color: Colors.black, width: 1),
+            border: Border.all(color: Colors.grey[400]!, width: 1),
           ),
         ),
         const SizedBox(width: 4),

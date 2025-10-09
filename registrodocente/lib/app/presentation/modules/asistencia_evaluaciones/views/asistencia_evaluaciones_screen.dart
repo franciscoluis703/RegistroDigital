@@ -1,10 +1,12 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../../../widgets/estudiante_nombre_widget.dart';
 import '../../../../data/services/curso_context_service.dart';
+import '../../../../data/services/calificaciones_supabase_service.dart';
 
 class AsistenciaEvaluacionesScreen extends StatefulWidget {
   const AsistenciaEvaluacionesScreen({super.key});
@@ -16,6 +18,7 @@ class AsistenciaEvaluacionesScreen extends StatefulWidget {
 class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScreen> {
   final int totalEstudiantes = 40;
   final CursoContextService _cursoContext = CursoContextService();
+  final CalificacionesSupabaseService _supabaseService = CalificacionesSupabaseService();
   String _asignatura = 'Asignatura';
 
   // Controladores para nombre y grado
@@ -39,29 +42,22 @@ class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScr
     });
   }
 
-  Future<String> _getKey() async {
-    final cursoId = await _cursoContext.obtenerCursoActual();
-    return 'asistencia_evaluaciones_${cursoId ?? 'default'}';
-  }
-
   Future<void> _cargarDatos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = await _getKey();
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
 
-    // Cargar datos guardados
-    final datosJson = prefs.getString(key);
-    if (datosJson != null) {
-      final datos = json.decode(datosJson) as Map<String, dynamic>;
+    // Cargar desde Supabase
+    final datos = await _supabaseService.obtenerEvaluacionesDias(cursoId);
 
+    if (datos != null && mounted) {
       // Cargar nombre y grado
       nombreController.text = datos['nombreDocente'] ?? '';
       gradoController.text = datos['grado'] ?? '';
 
-      // Cargar asistencias
-      final asistenciasGuardadas = datos['estudiantes'] as List<dynamic>?;
-      if (asistenciasGuardadas != null) {
+      // Cargar evaluaciones
+      final evaluacionesGuardadas = datos['estudiantes'] as List<dynamic>?;
+      if (evaluacionesGuardadas != null) {
         setState(() {
-          estudiantes = asistenciasGuardadas
+          estudiantes = evaluacionesGuardadas
               .map((e) => Map<String, String>.from(e))
               .toList();
         });
@@ -93,17 +89,202 @@ class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScr
     });
   }
 
+  void _verificarEvaluaciones() {
+    List<String> problemas = [];
+    int estudiantesConDatos = 0;
+
+    for (int i = 0; i < estudiantes.length; i++) {
+      final estudiante = estudiantes[i];
+      final nombre = estudiante['nombre'] ?? '';
+
+      if (nombre.isNotEmpty) {
+        estudiantesConDatos++;
+
+        // Verificar si tiene al menos una evaluación registrada
+        bool tieneEvaluaciones = false;
+        for (int j = 1; j <= 10; j++) {
+          if ((estudiante['$j'] ?? '').isNotEmpty) {
+            tieneEvaluaciones = true;
+            break;
+          }
+        }
+
+        if (!tieneEvaluaciones) {
+          problemas.add('Estudiante #${i + 1} ($nombre): No tiene evaluaciones registradas');
+        }
+      }
+    }
+
+    // Mostrar resultados
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              problemas.isEmpty ? Icons.check_circle : Icons.warning_amber_rounded,
+              color: problemas.isEmpty ? Colors.green : Colors.orange,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(problemas.isEmpty ? 'Verificación Exitosa' : 'Advertencias'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Resumen:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('• Estudiantes registrados: $estudiantesConDatos'),
+                    Text('• Total de estudiantes: ${estudiantes.length}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (problemas.isNotEmpty) ...[
+                const Text(
+                  'Advertencias encontradas:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange),
+                ),
+                const SizedBox(height: 8),
+                ...problemas.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.error_outline, size: 16, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(p, style: const TextStyle(fontSize: 14))),
+                    ],
+                  ),
+                )),
+              ] else ...[
+                const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Todas las evaluaciones están correctamente registradas.',
+                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _imprimirEvaluaciones() async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4.landscape,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Encabezado
+              pw.Text(
+                _asignatura.toUpperCase(),
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text('Docente: ${nombreController.text}'),
+              pw.Text('Grado: ${gradoController.text}'),
+              pw.SizedBox(height: 16),
+
+              // Tabla
+              pw.Table(
+                border: pw.TableBorder.all(),
+                children: [
+                  // Encabezado
+                  pw.TableRow(
+                    decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                    children: [
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text('No.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text('Nombre', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ),
+                      ...List.generate(10, (i) => pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Center(child: pw.Text('${i + 1}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                      )),
+                    ],
+                  ),
+                  // Filas de estudiantes
+                  ...estudiantes.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final estudiante = entry.value;
+                    return pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('${index + 1}'),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(estudiante['nombre'] ?? ''),
+                        ),
+                        ...List.generate(10, (i) => pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Center(child: pw.Text(estudiante['${i + 1}'] ?? '')),
+                        )),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
+  }
+
   Future<void> _guardarDatos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = await _getKey();
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
 
-    final datos = {
-      'nombreDocente': nombreController.text,
-      'grado': gradoController.text,
-      'estudiantes': estudiantes,
-    };
-
-    await prefs.setString(key, json.encode(datos));
+    // Guardar en Supabase
+    await _supabaseService.guardarEvaluacionesDias(
+      cursoId: cursoId,
+      nombreDocente: nombreController.text,
+      grado: gradoController.text,
+      estudiantes: estudiantes,
+    );
   }
 
   @override
@@ -123,12 +304,7 @@ class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScr
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Implementar verificación
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Verificación de asistencias')),
-                );
-              },
+              onPressed: _verificarEvaluaciones,
               icon: const Icon(Icons.warning_amber, size: 20),
               label: const Text('Verificar'),
               style: ElevatedButton.styleFrom(
@@ -142,12 +318,7 @@ class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScr
           IconButton(
             icon: const Icon(Icons.print),
             tooltip: 'Imprimir',
-            onPressed: () {
-              // TODO: Implementar impresión
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Impresión de asistencias')),
-              );
-            },
+            onPressed: _imprimirEvaluaciones,
           ),
         ],
       ),

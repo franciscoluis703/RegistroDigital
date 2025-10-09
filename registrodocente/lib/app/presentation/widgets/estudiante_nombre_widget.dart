@@ -35,15 +35,15 @@ class EstudianteNombreWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
+                color: Colors.grey.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 '#$numero',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: Colors.grey[700],
                 ),
               ),
             ),
@@ -86,10 +86,14 @@ class EstudianteNombreWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onDoubleTap: () => _mostrarNombreEstudiante(context),
+      onTap: () => _mostrarNombreEstudiante(context),
+      onLongPress: () => _mostrarNombreEstudiante(context),
       child: Container(
-        decoration: decoration,
-        color: backgroundColor,
+        width: double.infinity,
+        height: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: decoration ?? (backgroundColor != null ? BoxDecoration(color: backgroundColor) : null),
+        alignment: Alignment.center,
         child: Text(
           '$numero',
           style: style,

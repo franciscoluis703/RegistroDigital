@@ -1,10 +1,12 @@
 
 // lib/app/presentation/modules/home/views/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/avatar_genero_widget.dart';
-import '../../../routes/routes.dart';
+import '../../../../../app/presentation/routes/routes.dart';
 import '../../../../data/services/supabase_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -52,14 +54,15 @@ class _HomeScreenState extends State<HomeScreen> {
       'label': 'Perfil',
       'route': '/perfil',
     },
+    'notas': {
+      'icon': Icons.note_add,
+      'label': 'Notas',
+      'route': '/notas',
+    },
   };
 
   // Lista de actividades más usadas (ordenadas por frecuencia)
   List<String> _actividadesFrecuentes = [];
-
-  // Datos del usuario
-  String _nombreUsuario = 'Usuario';
-  String _emailUsuario = '';
 
   @override
   void initState() {
@@ -69,10 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _cargarDatosUsuario() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nombreUsuario = prefs.getString('usuario_nombre') ?? 'Usuario';
-      _emailUsuario = prefs.getString('usuario_email') ?? '';
+    // Cargar datos del usuario desde el provider
+    // Usar addPostFrameCallback para evitar llamar setState durante build
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.cargarDatosUsuario();
     });
   }
 
@@ -401,12 +405,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Cabecera con foto y datos
-              Row(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Cabecera con foto y datos
+                Row(
                 children: [
                   GestureDetector(
                     onTap: () {
@@ -416,27 +421,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _nombreUsuario,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Centro Educativo Eugenio M. deHostos',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Regional: 17 | Distrito: 04',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
+                    child: Consumer<UserProvider>(
+                      builder: (context, userProvider, child) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userProvider.nombre.isEmpty ? 'Usuario' : userProvider.nombre,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              userProvider.centroEducativo.isEmpty
+                                ? 'Centro Educativo Eugenio M. de Hostos'
+                                : userProvider.centroEducativo,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Regional: ${userProvider.regional.isEmpty ? "17" : userProvider.regional} | Distrito: ${userProvider.distrito.isEmpty ? "04" : userProvider.distrito}',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -549,39 +560,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              // Botones tipo card
-              Expanded(
-                child: Column(
-                  children: [
-                    _MenuCard(
-                      icon: Icons.home,
-                      label: 'Cursos',
-                      onTap: () {
-                        _navegarAActividad('cursos', '/cursos');
-                      },
-                      color: Colors.red,
-                    ),
-                    _MenuCard(
-                      icon: Icons.access_time,
-                      label: 'Horario de clase',
-                      onTap: () {
-                        _navegarAActividad('horario', '/horario-clase');
-                      },
-                      color: Colors.orange,
-                    ),
-                    _MenuCard(
-                      icon: Icons.calendar_today,
-                      label: 'Calendario escolar',
-                      onTap: () {
-                        _navegarAActividad('calendario', '/calendario-escolar');
-                      },
-                      color: Colors.green,
-                    ),
-                  ],
+                const SizedBox(height: 24),
+                // Botones tipo card
+                _MenuCard(
+                  icon: Icons.note_add,
+                  label: 'Bloc de Notas',
+                  onTap: () {
+                    _navegarAActividad('notas', '/notas');
+                  },
+                  color: Colors.purple,
                 ),
-              ),
-            ],
+                _MenuCard(
+                  icon: Icons.home,
+                  label: 'Cursos',
+                  onTap: () {
+                    _navegarAActividad('cursos', '/cursos');
+                  },
+                  color: Colors.red,
+                ),
+                _MenuCard(
+                  icon: Icons.access_time,
+                  label: 'Horario de clase',
+                  onTap: () {
+                    _navegarAActividad('horario', '/horario-clase');
+                  },
+                  color: Colors.orange,
+                ),
+                _MenuCard(
+                  icon: Icons.calendar_today,
+                  label: 'Calendario escolar',
+                  onTap: () {
+                    _navegarAActividad('calendario', '/calendario-escolar');
+                  },
+                  color: Colors.green,
+                ),
+                const SizedBox(height: 16), // Espaciado final
+              ],
+            ),
           ),
         ),
       ),

@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Registro Docente',
       debugShowCheckedModeBanner: false,
-      initialRoute: Routes.home, // Cambiado temporalmente para evitar login
+      initialRoute: Routes.splash,
       routes: appRoutes,
       theme: AppTheme.lightTheme,
     );

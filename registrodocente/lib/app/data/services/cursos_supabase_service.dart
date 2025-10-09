@@ -8,11 +8,12 @@ class CursosSupabaseService {
   /// Obtener todos los cursos del usuario actual
   Future<List<Map<String, dynamic>>> obtenerCursos() async {
     try {
-      if (_supabase == null) return [];
-      final userId = _supabase!.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) return [];
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) return [];
 
-      final response = await _supabase!
+      final response = await supabase
           .from('cursos')
           .select()
           .eq('user_id', userId)
@@ -20,7 +21,7 @@ class CursosSupabaseService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error al obtener cursos: $e');
+      // Error al obtener cursos
       return [];
     }
   }
@@ -33,11 +34,12 @@ class CursosSupabaseService {
     bool oculto = false,
   }) async {
     try {
-      if (_supabase == null) return null;
-      final userId = _supabase!.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) return null;
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) throw Exception('Usuario no autenticado');
 
-      final response = await _supabase!.from('cursos').insert({
+      final response = await supabase.from('cursos').insert({
         'user_id': userId,
         'nombre': nombre,
         'asignatura': asignatura,
@@ -47,7 +49,7 @@ class CursosSupabaseService {
 
       return response;
     } catch (e) {
-      print('Error al crear curso: $e');
+      // Error al crear curso
       return null;
     }
   }
@@ -55,11 +57,12 @@ class CursosSupabaseService {
   /// Actualizar un curso
   Future<bool> actualizarCurso(String cursoId, Map<String, dynamic> datos) async {
     try {
-      if (_supabase == null) return false;
-      await _supabase!.from('cursos').update(datos).eq('id', cursoId);
+      final supabase = _supabase;
+      if (supabase == null) return false;
+      await supabase.from('cursos').update(datos).eq('id', cursoId);
       return true;
     } catch (e) {
-      print('Error al actualizar curso: $e');
+      // Error al actualizar curso
       return false;
     }
   }
@@ -67,11 +70,12 @@ class CursosSupabaseService {
   /// Eliminar un curso
   Future<bool> eliminarCurso(String cursoId) async {
     try {
-      if (_supabase == null) return false;
-      await _supabase!.from('cursos').delete().eq('id', cursoId);
+      final supabase = _supabase;
+      if (supabase == null) return false;
+      await supabase.from('cursos').delete().eq('id', cursoId);
       return true;
     } catch (e) {
-      print('Error al eliminar curso: $e');
+      // Error al eliminar curso
       return false;
     }
   }
@@ -79,11 +83,12 @@ class CursosSupabaseService {
   /// Ocultar/mostrar curso
   Future<bool> toggleOcultarCurso(String cursoId, bool oculto) async {
     try {
-      if (_supabase == null) return false;
-      await _supabase!.from('cursos').update({'oculto': oculto}).eq('id', cursoId);
+      final supabase = _supabase;
+      if (supabase == null) return false;
+      await supabase.from('cursos').update({'oculto': oculto}).eq('id', cursoId);
       return true;
     } catch (e) {
-      print('Error al ocultar/mostrar curso: $e');
+      // Error al ocultar/mostrar curso
       return false;
     }
   }
@@ -91,25 +96,26 @@ class CursosSupabaseService {
   /// Establecer curso activo
   Future<bool> establecerCursoActivo(String cursoId) async {
     try {
-      if (_supabase == null) return false;
-      final userId = _supabase!.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) return false;
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
       // Desactivar todos los cursos del usuario
-      await _supabase!
+      await supabase
           .from('cursos')
           .update({'activo': false})
           .eq('user_id', userId);
 
       // Activar el curso seleccionado
-      await _supabase!
+      await supabase
           .from('cursos')
           .update({'activo': true})
           .eq('id', cursoId);
 
       return true;
     } catch (e) {
-      print('Error al establecer curso activo: $e');
+      // Error al establecer curso activo
       return false;
     }
   }
@@ -117,11 +123,12 @@ class CursosSupabaseService {
   /// Obtener curso activo
   Future<Map<String, dynamic>?> obtenerCursoActivo() async {
     try {
-      if (_supabase == null) return null;
-      final userId = _supabase!.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) return null;
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) return null;
 
-      final response = await _supabase!
+      final response = await supabase
           .from('cursos')
           .select()
           .eq('user_id', userId)
@@ -130,7 +137,7 @@ class CursosSupabaseService {
 
       return response;
     } catch (e) {
-      print('Error al obtener curso activo: $e');
+      // Error al obtener curso activo
       return null;
     }
   }
@@ -138,9 +145,10 @@ class CursosSupabaseService {
   /// Agregar sección a un curso
   Future<bool> agregarSeccion(String cursoId, String seccion) async {
     try {
-      if (_supabase == null) return false;
+      final supabase = _supabase;
+      if (supabase == null) return false;
       // Obtener curso actual
-      final curso = await _supabase!
+      final curso = await supabase
           .from('cursos')
           .select('secciones')
           .eq('id', cursoId)
@@ -160,14 +168,14 @@ class CursosSupabaseService {
       }
 
       // Actualizar
-      await _supabase!
+      await supabase
           .from('cursos')
           .update({'secciones': jsonEncode(secciones)})
           .eq('id', cursoId);
 
       return true;
     } catch (e) {
-      print('Error al agregar sección: $e');
+      // Error al agregar sección
       return false;
     }
   }
@@ -175,9 +183,10 @@ class CursosSupabaseService {
   /// Eliminar sección de un curso
   Future<bool> eliminarSeccion(String cursoId, String seccion) async {
     try {
-      if (_supabase == null) return false;
+      final supabase = _supabase;
+      if (supabase == null) return false;
       // Obtener curso actual
-      final curso = await _supabase!
+      final curso = await supabase
           .from('cursos')
           .select('secciones')
           .eq('id', cursoId)
@@ -195,14 +204,14 @@ class CursosSupabaseService {
       secciones.remove(seccion);
 
       // Actualizar
-      await _supabase!
+      await supabase
           .from('cursos')
           .update({'secciones': jsonEncode(secciones)})
           .eq('id', cursoId);
 
       return true;
     } catch (e) {
-      print('Error al eliminar sección: $e');
+      // Error al eliminar sección
       return false;
     }
   }

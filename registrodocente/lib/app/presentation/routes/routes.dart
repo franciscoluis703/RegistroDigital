@@ -4,8 +4,10 @@ class Routes {
   Routes._();
 
   static const splash = '/splash';
+  static const login = '/login';  // Nueva ruta con Supabase
   static const signIn = '/sign-in';
   static const signUp = '/sign-up';
+  static const forgotPassword = '/forgot-password';
   static const home = '/home';
   static const generalInfo = '/general_info';
   static const centroEducativo = '/centro_educativo';
@@ -23,4 +25,5 @@ class Routes {
   static const promocionGrado = '/promocion_grado';
   static const calendarioEscolar = '/calendario-escolar';
   static const horarioClase = '/horario-clase';
+  static const notas = '/notas';
 }

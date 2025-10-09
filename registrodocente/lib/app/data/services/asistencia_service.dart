@@ -1,10 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'asistencia_supabase_service.dart';
 
 class AsistenciaService {
   static final AsistenciaService _instance = AsistenciaService._internal();
   factory AsistenciaService() => _instance;
   AsistenciaService._internal();
+
+  final _supabaseService = AsistenciaSupabaseService();
 
   // Lista de todos los meses
   static const List<String> mesesDelAnio = [
@@ -42,31 +44,35 @@ class AsistenciaService {
       });
     }
 
-    // Guardar en SharedPreferences
-    await _guardarRegistros(curso, seccion, meses);
+    // Guardar en Supabase
+    await _supabaseService.guardarRegistrosMeses(
+      curso: curso,
+      seccion: seccion,
+      registros: meses,
+    );
 
     return meses;
   }
 
   // Guardar registros en SharedPreferences
   Future<void> _guardarRegistros(String curso, String seccion, List<Map<String, dynamic>> registros) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = _getKey(curso, seccion);
-    await prefs.setString(key, json.encode(registros));
+    // Ahora usa Supabase
+    await _supabaseService.guardarRegistrosMeses(
+      curso: curso,
+      seccion: seccion,
+      registros: registros,
+    );
   }
 
   // Obtener registros de un curso y sección
   Future<List<Map<String, dynamic>>> obtenerRegistros(String curso, String seccion) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = _getKey(curso, seccion);
-    final registrosJson = prefs.getString(key);
+    // Obtener desde Supabase
+    final registros = await _supabaseService.obtenerRegistrosMeses(
+      curso: curso,
+      seccion: seccion,
+    );
 
-    if (registrosJson != null) {
-      final List<dynamic> decoded = json.decode(registrosJson);
-      return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
-    }
-
-    return [];
+    return registros ?? [];
   }
 
   // Verificar si ya existen registros
@@ -77,6 +83,7 @@ class AsistenciaService {
 
   // Limpiar registros de un curso y sección
   Future<void> limpiarRegistros(String curso, String seccion) async {
+    // Nota: Podríamos implementar un método de eliminación en Supabase si es necesario
     final prefs = await SharedPreferences.getInstance();
     final key = _getKey(curso, seccion);
     await prefs.remove(key);
@@ -91,17 +98,15 @@ class AsistenciaService {
     required Map<int, String> feriados,
     required List<String> diasMes,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'asistencia_datos_${curso}_${seccion}_$mes';
-
-    final datos = {
-      'asistencia': asistencia,
-      'feriados': feriados.map((k, v) => MapEntry(k.toString(), v)),
-      'diasMes': diasMes,
-      'ultimaActualizacion': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setString(key, json.encode(datos));
+    // Guardar en Supabase
+    await _supabaseService.guardarDatosAsistenciaMes(
+      curso: curso,
+      seccion: seccion,
+      mes: mes,
+      asistencia: asistencia,
+      feriados: feriados,
+      diasMes: diasMes,
+    );
   }
 
   // Obtener datos completos de asistencia para un mes específico
@@ -110,25 +115,11 @@ class AsistenciaService {
     required String seccion,
     required String mes,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'asistencia_datos_${curso}_${seccion}_$mes';
-    final datosJson = prefs.getString(key);
-
-    if (datosJson != null) {
-      final decoded = json.decode(datosJson);
-      return {
-        'asistencia': (decoded['asistencia'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).map((e) => e.toString()).toList())
-            .toList(),
-        'feriados': (decoded['feriados'] as Map<String, dynamic>)
-            .map((k, v) => MapEntry(int.parse(k), v.toString())),
-        'diasMes': (decoded['diasMes'] as List<dynamic>)
-            .map((e) => e.toString())
-            .toList(),
-        'ultimaActualizacion': decoded['ultimaActualizacion'],
-      };
-    }
-
-    return null;
+    // Obtener desde Supabase
+    return await _supabaseService.obtenerDatosAsistenciaMes(
+      curso: curso,
+      seccion: seccion,
+      mes: mes,
+    );
   }
 }

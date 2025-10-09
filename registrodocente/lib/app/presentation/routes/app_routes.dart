@@ -2,8 +2,10 @@
 
 import 'package:flutter/material.dart';
 import '../modules/splash/views/splash_view.dart';
+import '../modules/auth/views/login_screen.dart';
 import '../modules/sign_in/views/sign_in_view.dart';
 import '../modules/sign_up/views/sign_up_view.dart';
+import '../modules/forgot_password/views/forgot_password_view.dart';
 import '../modules/home/views/home_screen.dart';
 import '../modules/student/general_info/views/general_info_screen.dart';
 import '../modules/student/centro_educativo/views/centro_educativo_screen.dart';
@@ -21,14 +23,17 @@ import '../modules/calificaciones/views/calificaciones_screen.dart';
 import '../modules/promocion_grado/views/promocion_grado_screen.dart';
 import '../modules/calendario_escolar/views/calendario_escolar_screen.dart';
 import '../modules/horario_clase/views/horario_clase_screen.dart';
+import '../modules/notas/views/notas_screen.dart';
 import 'routes.dart';
 
 
 Map<String, Widget Function(BuildContext)> get appRoutes {
   return {
     Routes.splash: (context) => const SplashView(),
+    Routes.login: (context) => const LoginScreen(),  // Nueva ruta con Supabase
     Routes.signIn: (context) => const SignInView(),
     Routes.signUp: (context) => const SignUpView(),
+    Routes.forgotPassword: (context) => const ForgotPasswordView(),
     Routes.home: (context) => const HomeScreen(),
     Routes.generalInfo: (context) => const GeneralInfoScreen(),
     Routes.centroEducativo: (context) => const CentroEducativoScreen(),
@@ -46,5 +51,6 @@ Map<String, Widget Function(BuildContext)> get appRoutes {
     Routes.promocionGrado: (context) => const PromocionGradoScreen(),
     Routes.calendarioEscolar: (context) => const CalendarioEscolarScreen(),
     Routes.horarioClase: (context) => const HorarioClaseScreen(),
+    Routes.notas: (context) => const NotasScreen(),
   };
 }

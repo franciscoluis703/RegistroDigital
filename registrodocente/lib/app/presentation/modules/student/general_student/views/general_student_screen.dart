@@ -20,8 +20,6 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
   List<List<TextEditingController>> camposControllers =
       List.generate(40, (_) => List.generate(10, (_) => TextEditingController()));
 
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
@@ -45,12 +43,6 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
             camposControllers[i][j].text = campos[i]['col_$j'] ?? '';
           }
         }
-
-        _isLoading = false;
-      });
-    } else {
-      setState(() {
-        _isLoading = false;
       });
     }
 
@@ -108,209 +100,179 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
             onPressed: _guardarEstudiantes,
-            tooltip: 'Guardar estudiantes',
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black, width: 2),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Título
+            const Center(
+              child: Text(
+                'Datos generales del estudiante',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            child: Column(
-              children: [
-                // Encabezado principal
-                Container(
-                  width: 1200,
-                  padding: const EdgeInsets.all(12),
-                  color: Colors.black,
-                  child: const Text(
-                    'Datos generales del estudiante',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+            const SizedBox(height: 24),
 
-                // Fila de encabezados de columnas
-                Row(
-                  children: [
-                    // Foto
-                    Column(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 90,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            border: Border.all(color: Colors.black),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Nombre y Apellidos
-                    Column(
-                      children: [
-                        Container(
-                          width: 250,
-                          height: 90,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            border: Border.all(color: Colors.black),
-                          ),
-                          alignment: Alignment.center,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Text(
-                                'NOMBRE(S) Y APELLIDOS(*)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'en orden alfabético',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Sexo
-                    _buildHeaderCell('Sexo', 50, hasSubheaders: true),
-                    // Del acta de nacimiento
-                    Column(
-                      children: [
-                        Container(
-                          width: 300,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            border: Border.all(color: Colors.black),
-                          ),
-                          child: const Text(
-                            'Del acta de nacimiento',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            _buildSubHeaderCell('Día', 45),
-                            _buildSubHeaderCell('Mes', 45),
-                            _buildSubHeaderCell('Año', 55),
-                            _buildSubHeaderCell('Libro', 55),
-                            _buildSubHeaderCell('Folio', 50),
-                            _buildSubHeaderCell('Acta', 50),
-                          ],
-                        ),
-                      ],
-                    ),
-                    // No. Cédula o Pasaporte
-                    _buildHeaderCell('No. Cédula\no Pasaporte', 130),
-                    // RNE
-                    _buildHeaderCell('RNE', 90),
-                    // Dirección donde reside
-                    _buildHeaderCell('Dirección donde reside', 280),
-                  ],
-                ),
-
-                // Filas de datos (40 filas)
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: List.generate(40, (rowIndex) {
-                        return Row(
-                          children: [
-                            // Número
-                            Container(
-                              width: 80,
-                              height: 40,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black),
-                              ),
-                              child: Text(
-                                '${rowIndex + 1}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                            // Nombre
-                            Container(
-                              width: 250,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black),
-                              ),
-                              child: TextField(
-                                controller: nombresControllers[rowIndex],
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 10,
-                                  ),
-                                  isDense: true,
-                                ),
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                            // Sexo
-                            _buildDataCell(50, rowIndex, 0),
-                            // Día
-                            _buildDataCell(45, rowIndex, 1),
-                            // Mes
-                            _buildDataCell(45, rowIndex, 2),
-                            // Año
-                            _buildDataCell(55, rowIndex, 3),
-                            // Libro
-                            _buildDataCell(55, rowIndex, 4),
-                            // Folio
-                            _buildDataCell(50, rowIndex, 5),
-                            // Acta
-                            _buildDataCell(50, rowIndex, 6),
-                            // No. Cédula o Pasaporte
-                            _buildDataCell(130, rowIndex, 7),
-                            // RNE
-                            _buildDataCell(90, rowIndex, 8),
-                            // Dirección donde reside
-                            _buildDataCell(280, rowIndex, 9),
-                          ],
-                        );
-                      }),
-                    ),
+            // Tabla con scroll horizontal
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fila de encabezados
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeaderColumn('#', 60),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('NOMBRE(S) Y APELLIDOS(*)', 280),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Sexo', 100),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Día', 80),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Mes', 80),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Año', 100),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Libro', 100),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Folio', 100),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Acta', 100),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('No. Cédula\no Pasaporte', 180),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('RNE', 140),
+                      const SizedBox(width: 16),
+                      _buildHeaderColumn('Dirección donde reside', 280),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+
+                  // Filas de estudiantes (1-40)
+                  ...List.generate(40, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildNumberField(index + 1, 60),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: nombresControllers[index],
+                            width: 280,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][0],
+                            width: 100,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][1],
+                            width: 80,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][2],
+                            width: 80,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][3],
+                            width: 100,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][4],
+                            width: 100,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][5],
+                            width: 100,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][6],
+                            width: 100,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][7],
+                            width: 180,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][8],
+                            width: 140,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildLabeledTextField(
+                            controller: camposControllers[index][9],
+                            width: 280,
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderColumn(String label, double width) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNumberField(int number, double width) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[400]!, width: 1),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: Colors.grey[300],
+          alignment: Alignment.center,
+          child: Text(
+            '$number',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
           ),
         ),
@@ -318,67 +280,24 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
     );
   }
 
-  Widget _buildHeaderCell(String text, double width,
-      {bool hasSubheaders = false}) {
-    return Container(
+  Widget _buildLabeledTextField({
+    required TextEditingController controller,
+    required double width,
+  }) {
+    return SizedBox(
       width: width,
-      height: hasSubheaders ? 90 : 90,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        border: Border.all(color: Colors.black),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 11,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[400]!, width: 1),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSubHeaderCell(String text, double width) {
-    return Container(
-      width: width,
-      height: 40,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        border: Border.all(color: Colors.black),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 10,
+        child: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            isDense: true,
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDataCell(double width, int row, int col) {
-    return Container(
-      width: width,
-      height: 40,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black),
-      ),
-      child: TextField(
-        controller: camposControllers[row][col],
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          isDense: true,
-        ),
-        style: const TextStyle(fontSize: 11),
-        textAlign: TextAlign.center,
       ),
     );
   }

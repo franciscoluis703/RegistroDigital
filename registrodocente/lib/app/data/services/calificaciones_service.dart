@@ -1,10 +1,13 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'calificaciones_supabase_service.dart';
 
 class CalificacionesService {
   static final CalificacionesService _instance = CalificacionesService._internal();
   factory CalificacionesService() => _instance;
   CalificacionesService._internal();
+
+  final _supabaseService = CalificacionesSupabaseService();
 
   // Obtener claves para SharedPreferences
   String _getKeyCalificaciones(String curso, String seccion) {
@@ -117,18 +120,15 @@ class CalificacionesService {
     required List<List<String>> notasGrupo3,
     required List<List<String>> notasGrupo4,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'calificaciones_notas_${curso}_$seccion';
-
-    final datos = {
-      'grupo1': notasGrupo1,
-      'grupo2': notasGrupo2,
-      'grupo3': notasGrupo3,
-      'grupo4': notasGrupo4,
-      'ultimaActualizacion': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setString(key, json.encode(datos));
+    // Guardar en Supabase
+    await _supabaseService.guardarNotasGrupos(
+      curso: curso,
+      seccion: seccion,
+      notasGrupo1: notasGrupo1,
+      notasGrupo2: notasGrupo2,
+      notasGrupo3: notasGrupo3,
+      notasGrupo4: notasGrupo4,
+    );
   }
 
   // Obtener todas las notas individuales de los 4 grupos
@@ -136,30 +136,11 @@ class CalificacionesService {
     required String curso,
     required String seccion,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'calificaciones_notas_${curso}_$seccion';
-    final datosJson = prefs.getString(key);
-
-    if (datosJson != null) {
-      final decoded = json.decode(datosJson);
-      return {
-        'grupo1': (decoded['grupo1'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).map((e) => e.toString()).toList())
-            .toList(),
-        'grupo2': (decoded['grupo2'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).map((e) => e.toString()).toList())
-            .toList(),
-        'grupo3': (decoded['grupo3'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).map((e) => e.toString()).toList())
-            .toList(),
-        'grupo4': (decoded['grupo4'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).map((e) => e.toString()).toList())
-            .toList(),
-        'ultimaActualizacion': decoded['ultimaActualizacion'],
-      };
-    }
-
-    return null;
+    // Obtener desde Supabase
+    return await _supabaseService.obtenerNotasGrupos(
+      curso: curso,
+      seccion: seccion,
+    );
   }
 
   // Guardar datos de promoción del grado
@@ -171,18 +152,14 @@ class CalificacionesService {
     required String grado,
     required String docente,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'promocion_grado_${curso}_$seccion';
-
-    final datos = {
-      'datosPromocion': datosPromocion,
-      'asignatura': asignatura,
-      'grado': grado,
-      'docente': docente,
-      'ultimaActualizacion': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setString(key, json.encode(datos));
+    // Guardar en Supabase (usar curso como cursoId, seccion ya no se usa)
+    await _supabaseService.guardarPromocionGradoMatricial(
+      cursoId: curso,
+      datosPromocion: datosPromocion,
+      asignatura: asignatura,
+      grado: grado,
+      docente: docente,
+    );
   }
 
   // Obtener datos de promoción del grado
@@ -190,23 +167,37 @@ class CalificacionesService {
     required String curso,
     required String seccion,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'promocion_grado_${curso}_$seccion';
-    final datosJson = prefs.getString(key);
+    // Obtener desde Supabase (usar curso como cursoId)
+    return await _supabaseService.obtenerPromocionGradoMatricial(curso);
+  }
 
-    if (datosJson != null) {
-      final decoded = json.decode(datosJson);
-      return {
-        'datosPromocion': (decoded['datosPromocion'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).map((e) => e.toString()).toList())
-            .toList(),
-        'asignatura': decoded['asignatura'] ?? '',
-        'grado': decoded['grado'] ?? '',
-        'docente': decoded['docente'] ?? '',
-        'ultimaActualizacion': decoded['ultimaActualizacion'],
-      };
-    }
+  // Guardar nombres personalizados de los grupos
+  Future<void> guardarNombresGrupos({
+    required String curso,
+    required String seccion,
+    required String nombreGrupo1,
+    required String nombreGrupo2,
+    required String nombreGrupo3,
+    required String nombreGrupo4,
+  }) async {
+    await _supabaseService.guardarNombresGrupos(
+      curso: curso,
+      seccion: seccion,
+      nombreGrupo1: nombreGrupo1,
+      nombreGrupo2: nombreGrupo2,
+      nombreGrupo3: nombreGrupo3,
+      nombreGrupo4: nombreGrupo4,
+    );
+  }
 
-    return null;
+  // Obtener nombres personalizados de los grupos
+  Future<Map<String, String>?> obtenerNombresGrupos({
+    required String curso,
+    required String seccion,
+  }) async {
+    return await _supabaseService.obtenerNombresGrupos(
+      curso: curso,
+      seccion: seccion,
+    );
   }
 }

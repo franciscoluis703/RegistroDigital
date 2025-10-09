@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../../data/services/centro_educativo_service.dart';
 
 class CentroEducativoScreen extends StatefulWidget {
   const CentroEducativoScreen({super.key});
@@ -10,6 +10,8 @@ class CentroEducativoScreen extends StatefulWidget {
 
 class _CentroEducativoScreenState extends State<CentroEducativoScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _centroService = CentroEducativoService();
+  bool _isLoading = true;
 
   // Controllers básicos
   final _nombreCentroController = TextEditingController();
@@ -45,53 +47,58 @@ class _CentroEducativoScreenState extends State<CentroEducativoScreen> {
   }
 
   Future<void> _cargarDatos() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nombreCentroController.text = prefs.getString('centro_nombre') ?? '';
-      _direccionController.text = prefs.getString('centro_direccion') ?? '';
-      _correoController.text = prefs.getString('centro_correo') ?? '';
-      _telefonoCentroController.text = prefs.getString('centro_telefono') ?? '';
-      _codigoGestionController.text = prefs.getString('centro_codigo_gestion') ?? '';
-      _codigoCartografiaController.text = prefs.getString('centro_codigo_cartografia') ?? '';
-      _directorNombreController.text = prefs.getString('centro_director_nombre') ?? '';
-      _directorCorreoController.text = prefs.getString('centro_director_correo') ?? '';
-      _directorTelefonoController.text = prefs.getString('centro_director_telefono') ?? '';
-      _docenteNombreController.text = prefs.getString('centro_docente_nombre') ?? '';
-      _docenteCorreoController.text = prefs.getString('centro_docente_correo') ?? '';
-      _docenteTelefonoController.text = prefs.getString('centro_docente_telefono') ?? '';
-      _regionalController.text = prefs.getString('centro_regional') ?? '';
-      _distritoController.text = prefs.getString('centro_distrito') ?? '';
-      _sectorSeleccionado = prefs.getString('centro_sector');
-      _zonaSeleccionada = prefs.getString('centro_zona');
-      _jornadaSeleccionada = prefs.getString('centro_jornada');
-    });
+    setState(() => _isLoading = true);
+
+    final datos = await _centroService.obtenerDatosCentro();
+
+    if (mounted) {
+      setState(() {
+        if (datos != null) {
+          _nombreCentroController.text = datos['nombre_centro'] ?? '';
+          _direccionController.text = datos['direccion'] ?? '';
+          _correoController.text = datos['correo'] ?? '';
+          _telefonoCentroController.text = datos['telefono_centro'] ?? '';
+          _codigoGestionController.text = datos['codigo_gestion'] ?? '';
+          _codigoCartografiaController.text = datos['codigo_cartografia'] ?? '';
+          _directorNombreController.text = datos['director_nombre'] ?? '';
+          _directorCorreoController.text = datos['director_correo'] ?? '';
+          _directorTelefonoController.text = datos['director_telefono'] ?? '';
+          _docenteNombreController.text = datos['docente_nombre'] ?? '';
+          _docenteCorreoController.text = datos['docente_correo'] ?? '';
+          _docenteTelefonoController.text = datos['docente_telefono'] ?? '';
+          _regionalController.text = datos['regional'] ?? '';
+          _distritoController.text = datos['distrito'] ?? '';
+          _sectorSeleccionado = datos['sector'];
+          _zonaSeleccionada = datos['zona'];
+          _jornadaSeleccionada = datos['jornada'];
+        }
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _guardarDatos() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('centro_nombre', _nombreCentroController.text);
-    await prefs.setString('centro_direccion', _direccionController.text);
-    await prefs.setString('centro_correo', _correoController.text);
-    await prefs.setString('centro_telefono', _telefonoCentroController.text);
-    await prefs.setString('centro_codigo_gestion', _codigoGestionController.text);
-    await prefs.setString('centro_codigo_cartografia', _codigoCartografiaController.text);
-    await prefs.setString('centro_director_nombre', _directorNombreController.text);
-    await prefs.setString('centro_director_correo', _directorCorreoController.text);
-    await prefs.setString('centro_director_telefono', _directorTelefonoController.text);
-    await prefs.setString('centro_docente_nombre', _docenteNombreController.text);
-    await prefs.setString('centro_docente_correo', _docenteCorreoController.text);
-    await prefs.setString('centro_docente_telefono', _docenteTelefonoController.text);
-    await prefs.setString('centro_regional', _regionalController.text);
-    await prefs.setString('centro_distrito', _distritoController.text);
-    if (_sectorSeleccionado != null) {
-      await prefs.setString('centro_sector', _sectorSeleccionado!);
-    }
-    if (_zonaSeleccionada != null) {
-      await prefs.setString('centro_zona', _zonaSeleccionada!);
-    }
-    if (_jornadaSeleccionada != null) {
-      await prefs.setString('centro_jornada', _jornadaSeleccionada!);
-    }
+    final datos = {
+      'nombre_centro': _nombreCentroController.text,
+      'direccion': _direccionController.text,
+      'correo': _correoController.text,
+      'telefono_centro': _telefonoCentroController.text,
+      'codigo_gestion': _codigoGestionController.text,
+      'codigo_cartografia': _codigoCartografiaController.text,
+      'director_nombre': _directorNombreController.text,
+      'director_correo': _directorCorreoController.text,
+      'director_telefono': _directorTelefonoController.text,
+      'docente_nombre': _docenteNombreController.text,
+      'docente_correo': _docenteCorreoController.text,
+      'docente_telefono': _docenteTelefonoController.text,
+      'regional': _regionalController.text,
+      'distrito': _distritoController.text,
+      'sector': _sectorSeleccionado,
+      'zona': _zonaSeleccionada,
+      'jornada': _jornadaSeleccionada,
+    };
+
+    await _centroService.guardarDatosCentro(datos);
   }
 
   @override
@@ -123,8 +130,17 @@ class _CentroEducativoScreenState extends State<CentroEducativoScreen> {
         foregroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: _guardarDatos,
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
@@ -325,7 +341,17 @@ class _CentroEducativoScreenState extends State<CentroEducativoScreen> {
                   width: 200,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: _guardarDatos,
+                    onPressed: () async {
+                      await _guardarDatos();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Datos guardados en la base de datos'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFbfa661),
                     ),

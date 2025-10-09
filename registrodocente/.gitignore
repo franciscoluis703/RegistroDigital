@@ -44,5 +44,23 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Local Netlify folder
-.netlify
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Sensitive data
+*.key
+*.pem
+*.p12
+google-services.json
+GoogleService-Info.plist
+
+# Local database
+*.db
+*.sqlite
+*.sqlite3
+
+# Flutter plugins
+.flutter-plugins

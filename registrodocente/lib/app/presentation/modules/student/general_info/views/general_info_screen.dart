@@ -26,6 +26,15 @@ class _GeneralInfoScreenState extends State<GeneralInfoScreen> {
     });
   }
 
+  void _guardarDatos() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Datos guardados correctamente'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,6 +45,13 @@ class _GeneralInfoScreenState extends State<GeneralInfoScreen> {
         foregroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: _guardarDatos,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(

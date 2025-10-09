@@ -41,7 +41,7 @@ class _SignUpViewState extends State<SignUpView> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         data: {
-          'name': _nameController.text.trim(),
+          'nombre': _nameController.text.trim(),
         },
       );
 

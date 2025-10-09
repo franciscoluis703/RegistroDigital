@@ -6,6 +6,8 @@ import 'package:printing/printing.dart';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../data/services/calificaciones_service.dart';
+import '../../../../data/services/curso_context_service.dart';
+import '../../../widgets/estudiante_nombre_widget.dart';
 
 class PromocionGradoScreen extends StatefulWidget {
   const PromocionGradoScreen({super.key});
@@ -18,6 +20,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
   final int numRows = 40;
   late List<List<TextEditingController>> controllers;
   final _calificacionesService = CalificacionesService();
+  final _cursoContext = CursoContextService();
   bool _calificacionesCargadas = false;
 
   // Controladores para asignatura, grado y docente
@@ -374,18 +377,16 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
   }
 
   // Guardar automáticamente
-  void _guardarAutomaticamente() {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
-    final curso = args?['curso'] ?? 'LENGUA ESPAÑOLA';
-    final seccion = args?['seccion'] ?? 'A';
+  void _guardarAutomaticamente() async {
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
 
     final datosPromocion = controllers.map((fila) =>
       fila.map((controller) => controller.text).toList()
     ).toList();
 
-    _calificacionesService.guardarPromocionGrado(
-      curso: curso,
-      seccion: seccion,
+    await _calificacionesService.guardarPromocionGrado(
+      curso: cursoId,
+      seccion: '', // Ya no se usa por separado, está incluido en cursoId
       datosPromocion: datosPromocion,
       asignatura: _asignaturaController.text,
       grado: _gradoController.text,
@@ -403,21 +404,23 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
   }
 
   void _cargarCalificacionesFinales() async {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
-    final curso = args?['curso'] ?? 'LENGUA ESPAÑOLA';
-    final seccion = args?['seccion'] ?? 'A';
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
+
+    print('🔍 CARGANDO CALIFICACIONES FINALES con cursoId: $cursoId');
 
     // Intentar cargar datos guardados previamente
     final datosGuardados = await _calificacionesService.obtenerPromocionGrado(
-      curso: curso,
-      seccion: seccion,
+      curso: cursoId,
+      seccion: '', // Ya no se usa por separado
     );
 
     if (datosGuardados != null) {
-      // Cargar datos guardados
+      print('   Datos de promoción guardados encontrados');
+      // Cargar datos guardados (EXCEPTO la columna C.F. que se actualizará después)
       final promocion = datosGuardados['datosPromocion'] as List<List<String>>;
       for (int i = 0; i < numRows && i < promocion.length; i++) {
-        for (int j = 0; j < 13 && j < promocion[i].length; j++) {
+        // Cargar todas las columnas EXCEPTO la columna 0 (C.F.)
+        for (int j = 1; j < 13 && j < promocion[i].length; j++) {
           controllers[i][j].text = promocion[i][j];
         }
       }
@@ -425,15 +428,16 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
       _asignaturaController.text = datosGuardados['asignatura'] ?? '';
       _gradoController.text = datosGuardados['grado'] ?? '';
       _docenteController.text = datosGuardados['docente'] ?? '';
+    }
 
-      // Saltar la carga de calificaciones finales si ya hay datos guardados
-    } else {
-      // Si no hay datos guardados, cargar solo las calificaciones finales
-      // Obtener calificaciones finales del servicio
-      final calificaciones = _calificacionesService.obtenerCalificacionesFinales(curso, seccion);
+    // SIEMPRE cargar y actualizar las calificaciones finales en la columna C.F. (columna 0)
+    print('   Cargando calificaciones finales desde el servicio...');
+    final calificaciones = await _calificacionesService.obtenerCalificacionesFinalesAsync(cursoId, '');
+    print('   Calificaciones finales obtenidas: ${calificaciones.where((c) => c.isNotEmpty).length} estudiantes con calificaciones');
 
     // Verificar si han pasado 5 días desde la carga
-    final hanPasado5Dias = _calificacionesService.hanPasado5Dias(curso, seccion);
+    final fechaCarga = await _calificacionesService.obtenerFechaCargaAsync(cursoId, '');
+    final hanPasado5Dias = fechaCarga != null && DateTime.now().difference(fechaCarga).inDays >= 5;
 
     // Cargar las calificaciones en la columna C.F. (columna 0)
     for (int i = 0; i < numRows && i < calificaciones.length; i++) {
@@ -465,13 +469,13 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
         }
 
         // Si han pasado 35 días y C.F (columna 9 de CALIFICACIONES ESPECIALES) está vacía, copiar C.EX.F a C.F
-        final hanPasado35Dias = _calificacionesService.hanPasado35Dias(curso, seccion);
+        final hanPasado35Dias = fechaCarga != null && DateTime.now().difference(fechaCarga).inDays >= 35;
         if (hanPasado35Dias && controllers[i][9].text.isEmpty && controllers[i][8].text.isNotEmpty) {
           controllers[i][9].text = controllers[i][8].text;
         }
 
         // Si han pasado 3 días y C.E (columna 10 de CALIFICACIONES ESPECIALES) está vacía, copiar C.F
-        final hanPasado3Dias = _calificacionesService.hanPasado3Dias(curso, seccion);
+        final hanPasado3Dias = fechaCarga != null && DateTime.now().difference(fechaCarga).inDays >= 3;
         if (hanPasado3Dias && controllers[i][10].text.isEmpty && controllers[i][9].text.isNotEmpty) {
           controllers[i][10].text = controllers[i][9].text;
           // Verificar si C.E < 70 para marcar X en R o ✓ en A
@@ -496,7 +500,6 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
         }
       }
     }
-    } // Cierre del else
 
     // Agregar listeners a todos los controladores para guardado automático
     for (var fila in controllers) {
@@ -647,18 +650,25 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
-    final curso = args?['curso'] ?? 'LENGUA ESPAÑOLA';
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(curso.toUpperCase()),
+        title: FutureBuilder<String>(
+          future: _cursoContext.obtenerAsignaturaActual(),
+          builder: (context, snapshot) {
+            return Text((snapshot.data ?? 'GF - GD').toUpperCase());
+          },
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: _guardarAutomaticamente,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             child: ElevatedButton.icon(
@@ -682,12 +692,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+          scrollDirection: Axis.horizontal,
+          child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Campo para el nombre del docente
@@ -697,7 +705,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: Colors.blue.shade700, width: 1.5),
+                    border: Border.all(color: Colors.grey[400]!, width: 1),
                   ),
                   child: Row(
                     children: [
@@ -706,7 +714,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade900,
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -741,14 +749,13 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildTable() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.blue.shade700, width: 1.5),
+        border: Border.all(color: Colors.grey[400]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -760,16 +767,16 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                 width: 50,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade700,
+                  color: Colors.grey[400],
                   border: Border(
-                    right: BorderSide(color: Colors.blue.shade900, width: 1),
-                    bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                    right: BorderSide(color: Colors.grey[400]!, width: 1),
+                    bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
                 ),
                 child: const Center(
                   child: Text(
                     'N°',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black),
                   ),
                 ),
               ),
@@ -777,10 +784,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                 width: 60,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade700,
+                  color: Colors.grey[400],
                   border: Border(
-                    right: BorderSide(color: Colors.blue.shade900, width: 1),
-                    bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                    right: BorderSide(color: Colors.grey[400]!, width: 1),
+                    bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
                 ),
               ),
@@ -788,10 +795,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                 width: 650,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade700,
+                  color: Colors.grey[400],
                   border: Border(
-                    right: BorderSide(color: Colors.blue.shade900, width: 1),
-                    bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                    right: BorderSide(color: Colors.grey[400]!, width: 1),
+                    bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
                 ),
                 child: Row(
@@ -800,7 +807,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                       padding: EdgeInsets.only(left: 8, right: 8),
                       child: Text(
                         'ASIGNATURA:',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black),
                       ),
                     ),
                     Expanded(
@@ -822,9 +829,9 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                 width: 170,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade700,
+                  color: Colors.grey[400],
                   border: Border(
-                    bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                    bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
                 ),
                 child: Row(
@@ -833,7 +840,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                       padding: EdgeInsets.only(left: 8, right: 8),
                       child: Text(
                         'GRADO:',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black),
                       ),
                     ),
                     Expanded(
@@ -865,10 +872,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 50,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                       ),
@@ -876,10 +883,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                       ),
@@ -887,17 +894,17 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 260,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                         child: const Center(
                           child: Text(
                             'CALIFICACION\nCOMPLETIVA',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black),
                           ),
                         ),
                       ),
@@ -905,17 +912,17 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 260,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                         child: const Center(
                           child: Text(
                             'CALIFICACIONES\nEXTRAORDINARIA',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black),
                           ),
                         ),
                       ),
@@ -923,17 +930,17 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 130,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                         child: const Center(
                           child: Text(
                             'CALIFICAC\nIONES\nESPECIAL\nES',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, height: 1.1, color: Colors.white),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, height: 1.1, color: Colors.black),
                           ),
                         ),
                       ),
@@ -941,16 +948,16 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 170,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                         child: const Center(
                           child: Text(
                             'SITUACION\nFINAL EN\nLA\nASIGNATURA',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, height: 1.1, color: Colors.white),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, height: 1.1, color: Colors.black),
                           ),
                         ),
                       ),
@@ -963,10 +970,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 50,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                       ),
@@ -974,10 +981,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.indigo.shade600,
+                          color: Colors.grey[400],
                           border: Border(
-                            right: BorderSide(color: Colors.blue.shade900, width: 1),
-                            bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                            right: BorderSide(color: Colors.grey[400]!, width: 1),
+                            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                           ),
                         ),
                       ),
@@ -1005,10 +1012,10 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                   width: 50,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.indigo.shade600,
+                    color: Colors.grey[400],
                     border: Border(
-                      right: BorderSide(color: Colors.blue.shade900, width: 1),
-                      bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                      right: BorderSide(color: Colors.grey[400]!, width: 1),
+                      bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                     ),
                   ),
                 ),
@@ -1021,17 +1028,17 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
                   width: 60,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.indigo.shade600,
+                    color: Colors.grey[400],
                     border: Border(
-                      right: BorderSide(color: Colors.blue.shade900, width: 1),
-                      bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+                      right: BorderSide(color: Colors.grey[400]!, width: 1),
+                      bottom: BorderSide(color: Colors.grey[400]!, width: 1),
                     ),
                   ),
                   child: const Center(
                     child: Text(
                       'C.F.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                   ),
                 ),
@@ -1070,17 +1077,17 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
       width: width,
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.blue.shade100,
+        color: Colors.grey[300],
         border: Border(
-          right: BorderSide(color: Colors.blue.shade900, width: 1),
-          bottom: BorderSide(color: Colors.blue.shade900, width: 1),
+          right: BorderSide(color: Colors.grey[400]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       child: Center(
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, height: 1.1, color: Colors.blue.shade900),
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, height: 1.1, color: Colors.black),
         ),
       ),
     );
@@ -1090,22 +1097,20 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
     final isEvenRow = (number - 1) % 2 == 0;
     final backgroundColor = Colors.grey.shade300;
 
-    return Container(
+    return SizedBox(
       width: width,
       height: 40,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: Colors.blue.shade300, width: 1),
-          bottom: BorderSide(color: Colors.blue.shade300, width: 1),
+      child: EstudianteNombreWidget(
+        numero: number,
+        decoration: BoxDecoration(
+          border: Border(
+            right: BorderSide(color: Colors.grey[400]!, width: 1),
+            bottom: BorderSide(color: Colors.grey[400]!, width: 1),
+          ),
+          color: backgroundColor,
         ),
-        color: backgroundColor,
-      ),
-      child: Center(
-        child: Text(
-          number.toString(),
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue.shade900),
-        ),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -1119,7 +1124,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
     //           5=30% C.F, 6=C.E.EX, 7=70% C.E.EX, 8=C.EX.F,
     //           9=C.F (CALIFICACIONES ESPECIALES), 10=C.E (CALIFICACIONES ESPECIALES)
     bool bloqueada = false;
-    Color backgroundColor = isEvenRow ? Colors.white : Colors.blue.shade50;
+    Color backgroundColor = Colors.white;
 
     // Si C.F. >= 70, bloquear todas las columnas de recuperación (1-10)
     if (col >= 1 && col <= 10) {
@@ -1174,8 +1179,8 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
       height: 40,
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: Colors.blue.shade300, width: 1),
-          bottom: BorderSide(color: Colors.blue.shade300, width: 1),
+          right: BorderSide(color: Colors.grey[400]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
         color: backgroundColor,
       ),

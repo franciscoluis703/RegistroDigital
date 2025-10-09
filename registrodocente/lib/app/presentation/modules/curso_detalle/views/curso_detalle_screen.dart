@@ -4,6 +4,9 @@ import '../../../routes/routes.dart';
 import '../../../widgets/avatar_genero_widget.dart';
 import '../../../themes/app_colors.dart';
 import '../../../widgets/common/educational_card.dart';
+import '../../../../data/services/estudiantes_service.dart';
+import '../../../../data/services/curso_context_service.dart';
+import '../../../widgets/participation_wheel_widget.dart';
 
 class CursoDetalleScreen extends StatefulWidget {
   const CursoDetalleScreen({super.key});
@@ -14,11 +17,15 @@ class CursoDetalleScreen extends StatefulWidget {
 
 class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
   String _nombreDocente = 'Usuario';
+  final EstudiantesService _estudiantesService = EstudiantesService();
+  final CursoContextService _cursoContext = CursoContextService();
+  List<String> _nombresEstudiantes = [];
 
   @override
   void initState() {
     super.initState();
     _cargarDatosUsuario();
+    _cargarEstudiantes();
   }
 
   Future<void> _cargarDatosUsuario() async {
@@ -27,6 +34,35 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
     setState(() {
       _nombreDocente = nombre;
     });
+  }
+
+  Future<void> _cargarEstudiantes() async {
+    final nombres = await _estudiantesService.obtenerNombresEstudiantes();
+    setState(() {
+      _nombresEstudiantes = nombres;
+    });
+  }
+
+  void _mostrarRuletaParticipacion() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            maxWidth: 500,
+          ),
+          child: SingleChildScrollView(
+            child: ParticipationWheelWidget(
+              studentNames: _nombresEstudiantes,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -124,7 +160,7 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                '$curso - Sección $seccion',
+                                curso,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -140,6 +176,56 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // Botón de ruleta de participación
+              GestureDetector(
+                onTap: _mostrarRuletaParticipacion,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.purple[600]!,
+                        Colors.purple[800]!,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.casino,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Ruleta de Participación',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Botones tipo card
               Expanded(
                 child: SingleChildScrollView(
@@ -179,15 +265,21 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                         title: 'Calificaciones de rendimiento',
                         subtitle: 'Evaluaciones y notas',
                         color: AppColors.calificaciones,
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            Routes.calificaciones,
-                            arguments: {
-                              'curso': curso,
-                              'seccion': seccion,
-                            },
-                          );
+                        onTap: () async {
+                          // Establecer el cursoId antes de navegar
+                          final cursoId = curso.toLowerCase().replaceAll(' ', '_').replaceAll('-', '');
+                          await _cursoContext.establecerCursoActual(cursoId);
+
+                          if (mounted) {
+                            Navigator.pushNamed(
+                              context,
+                              Routes.calificaciones,
+                              arguments: {
+                                'curso': curso,
+                                'seccion': seccion,
+                              },
+                            );
+                          }
                         },
                       ),
                       EducationalCard(
@@ -195,15 +287,21 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                         title: 'Promoción del grado',
                         subtitle: 'Avance académico',
                         color: AppColors.promocion,
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            Routes.promocionGrado,
-                            arguments: {
-                              'curso': curso,
-                              'seccion': seccion,
-                            },
-                          );
+                        onTap: () async {
+                          // Establecer el cursoId antes de navegar
+                          final cursoId = curso.toLowerCase().replaceAll(' ', '_').replaceAll('-', '');
+                          await _cursoContext.establecerCursoActual(cursoId);
+
+                          if (mounted) {
+                            Navigator.pushNamed(
+                              context,
+                              Routes.promocionGrado,
+                              arguments: {
+                                'curso': curso,
+                                'seccion': seccion,
+                              },
+                            );
+                          }
                         },
                       ),
                     ],

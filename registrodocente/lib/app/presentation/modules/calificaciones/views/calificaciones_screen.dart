@@ -8,6 +8,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../../../data/services/calificaciones_service.dart';
+import '../../../../data/services/curso_context_service.dart';
+import '../../../widgets/estudiante_nombre_widget.dart';
 
 class CalificacionesScreen extends StatefulWidget {
   const CalificacionesScreen({super.key});
@@ -26,7 +28,91 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   int paginaActual = 0; // 0 = Grupos 1 y 2, 1 = Grupos 3 y 4 + Promedios
 
   final _calificacionesService = CalificacionesService();
+  final _cursoContext = CursoContextService();
   bool _datosInicializados = false;
+
+  // Nombres personalizados de los grupos
+  String nombreGrupo1 = 'GRUPO 1:';
+  String nombreGrupo2 = 'GRUPO 2:';
+  String nombreGrupo3 = 'GRUPO 3';
+  String nombreGrupo4 = 'GRUPO 4';
+
+  // Editar nombre de grupo
+  void _editarNombreGrupo(int numeroGrupo) {
+    String nombreActual = '';
+    switch (numeroGrupo) {
+      case 1:
+        nombreActual = nombreGrupo1;
+        break;
+      case 2:
+        nombreActual = nombreGrupo2;
+        break;
+      case 3:
+        nombreActual = nombreGrupo3;
+        break;
+      case 4:
+        nombreActual = nombreGrupo4;
+        break;
+    }
+
+    final controller = TextEditingController(text: nombreActual);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Editar nombre del Grupo $numeroGrupo'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Nombre del grupo',
+              hintText: 'Ej: Comunicativa, Pensamiento lógico...',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                controller.dispose();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  switch (numeroGrupo) {
+                    case 1:
+                      nombreGrupo1 = controller.text;
+                      break;
+                    case 2:
+                      nombreGrupo2 = controller.text;
+                      break;
+                    case 3:
+                      nombreGrupo3 = controller.text;
+                      break;
+                    case 4:
+                      nombreGrupo4 = controller.text;
+                      break;
+                  }
+                });
+                _guardarNombresGrupos(context);
+                controller.dispose();
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   // Verificar calificaciones incompletas
   void _verificarCalificacionesIncompletas() {
@@ -492,6 +578,11 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: () => _guardarAutomaticamente(context),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             child: ElevatedButton.icon(
@@ -520,32 +611,30 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
       body: Column(
         children: [
           Expanded(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: SingleChildScrollView(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                    ),
-                    child: IntrinsicWidth(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Encabezado con materia y grado
-                          _buildEncabezadoPrincipal(curso),
-                          // Sección de competencias con grupos
-                          paginaActual == 0
-                            ? _buildSeccionCompetencias()
-                            : _buildSeccionCompetenciasPagina2(),
-                          // Tabla de calificaciones
-                          paginaActual == 0
-                            ? _buildTablaCalificacionesPagina1()
-                            : _buildTablaCalificacionesPagina2(),
-                        ],
-                      ),
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[400]!, width: 1),
+                  ),
+                  child: IntrinsicWidth(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Encabezado con materia y grado
+                        _buildEncabezadoPrincipal(curso),
+                        // Sección de competencias con grupos
+                        paginaActual == 0
+                          ? _buildSeccionCompetencias()
+                          : _buildSeccionCompetenciasPagina2(),
+                        // Tabla de calificaciones
+                        paginaActual == 0
+                          ? _buildTablaCalificacionesPagina1()
+                          : _buildTablaCalificacionesPagina2(),
+                      ],
                     ),
                   ),
                 ),
@@ -603,9 +692,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   Widget _buildEncabezadoPrincipal(String materia) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        border: const Border(
-          bottom: BorderSide(color: Colors.black, width: 1),
+        color: Colors.grey[400],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       child: Row(
@@ -614,9 +703,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
             flex: 3,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
-                  right: BorderSide(color: Colors.black, width: 1),
+                  right: BorderSide(color: Colors.grey[400]!, width: 1),
                 ),
               ),
               child: Text(
@@ -651,9 +740,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   Widget _buildSeccionCompetencias() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blue[50],
-        border: const Border(
-          bottom: BorderSide(color: Colors.black, width: 1),
+        color: Colors.grey[300],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       child: Row(
@@ -664,9 +753,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
             width: 45,
             height: 140,
             decoration: BoxDecoration(
-              color: Colors.blue[100],
-              border: const Border(
-                right: BorderSide(color: Colors.black, width: 1),
+              color: Colors.grey[400],
+              border: Border(
+                right: BorderSide(color: Colors.grey[400]!, width: 1),
               ),
             ),
             child: Center(
@@ -686,46 +775,66 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
           ),
           // GRUPO 1
           Expanded(
-            child: Container(
-              height: 140,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.black, width: 1),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'GRUPO 1:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+            child: GestureDetector(
+              onTap: () => _editarNombreGrupo(1),
+              child: Container(
+                height: 140,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            nombreGrupo1,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.edit, size: 16, color: Colors.grey[600]),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           // GRUPO 2
           Expanded(
-            child: Container(
-              height: 140,
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'GRUPO 2:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+            child: GestureDetector(
+              onTap: () => _editarNombreGrupo(2),
+              child: Container(
+                height: 140,
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            nombreGrupo2,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.edit, size: 16, color: Colors.grey[600]),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -737,9 +846,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   Widget _buildSeccionCompetenciasPagina2() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.green[50],
-        border: const Border(
-          bottom: BorderSide(color: Colors.black, width: 1),
+        color: Colors.grey[300],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       child: Row(
@@ -750,9 +859,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
             width: 45,
             height: 140,
             decoration: BoxDecoration(
-              color: Colors.green[100],
-              border: const Border(
-                right: BorderSide(color: Colors.black, width: 1),
+              color: Colors.grey[400],
+              border: Border(
+                right: BorderSide(color: Colors.grey[400]!, width: 1),
               ),
             ),
             child: Center(
@@ -773,52 +882,72 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
           // GRUPO 3
           Expanded(
             flex: 2,
-            child: Container(
-              height: 140,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.black, width: 1),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'GRUPO 3',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+            child: GestureDetector(
+              onTap: () => _editarNombreGrupo(3),
+              child: Container(
+                height: 140,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            nombreGrupo3,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.edit, size: 16, color: Colors.grey[600]),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           // GRUPO 4
           Expanded(
             flex: 2,
-            child: Container(
-              height: 140,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.black, width: 1),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'GRUPO 4',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+            child: GestureDetector(
+              onTap: () => _editarNombreGrupo(4),
+              child: Container(
+                height: 140,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: Colors.grey[400]!, width: 1),
                   ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            nombreGrupo4,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.edit, size: 16, color: Colors.grey[600]),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -829,7 +958,7 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
               height: 140,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber[50],
+                color: Colors.grey[200],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,9 +1007,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   Widget _buildEncabezadosColumnas() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blueGrey[100],
-        border: const Border(
-          bottom: BorderSide(color: Colors.black, width: 1),
+        color: Colors.grey[400],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       child: Row(
@@ -915,7 +1044,7 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
       height: 32,
       decoration: BoxDecoration(
         border: Border(
-          left: isFirst ? BorderSide.none : const BorderSide(color: Colors.black, width: 1),
+          left: isFirst ? BorderSide.none : BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       alignment: Alignment.center,
@@ -934,9 +1063,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   Widget _buildEncabezadosColumnasPagina2() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blueGrey[100],
-        border: const Border(
-          bottom: BorderSide(color: Colors.black, width: 1),
+        color: Colors.grey[400],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       child: Row(
@@ -977,7 +1106,7 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
       height: 60,
       decoration: BoxDecoration(
         border: Border(
-          left: isFirst ? BorderSide.none : const BorderSide(color: Colors.black, width: 1),
+          left: isFirst ? BorderSide.none : BorderSide(color: Colors.grey[400]!, width: 1),
         ),
       ),
       alignment: Alignment.center,
@@ -997,9 +1126,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
 
   Widget _buildFilaEstudiantePagina1(int numero) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.black, width: 0.5),
+          bottom: BorderSide(color: Colors.grey[400]!, width: 0.5),
         ),
       ),
       child: Row(
@@ -1016,9 +1145,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
 
   Widget _buildFilaEstudiantePagina2(int numero) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.black, width: 0.5),
+          bottom: BorderSide(color: Colors.grey[400]!, width: 0.5),
         ),
       ),
       child: Row(
@@ -1110,20 +1239,60 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
     return calificacionFinal.toString();
   }
 
-  void _actualizarCalificacionesEnServicio(BuildContext context) {
-    // Obtener curso y sección del contexto
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
-    final curso = args?['curso'] ?? 'LENGUA ESPAÑOLA';
-    final seccion = args?['seccion'] ?? 'A';
+  Future<void> _actualizarCalificacionesEnServicio(BuildContext context) async {
+    // Obtener cursoId desde CursoContextService (igual que promocion_grado_screen)
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
+
+    print('🔍 GUARDANDO CALIFICACIONES FINALES con cursoId: $cursoId');
 
     // Calcular todas las calificaciones finales
     List<String> calificacionesFinales = [];
     for (int i = 0; i < 40; i++) {
-      calificacionesFinales.add(_calcularCalificacionFinal(i));
+      final cf = _calcularCalificacionFinal(i);
+      if (cf.isNotEmpty) {
+        calificacionesFinales.add(cf);
+        print('   Estudiante $i: CF = $cf');
+      } else {
+        calificacionesFinales.add('');
+      }
     }
 
-    // Guardar en el servicio
-    _calificacionesService.guardarCalificacionesFinales(curso, seccion, calificacionesFinales);
+    // Guardar usando el cursoId (sin seccion) para que coincida con promocion_grado_screen
+    await _calificacionesService.guardarCalificacionesFinales(cursoId, '', calificacionesFinales);
+    print('✅ Calificaciones guardadas con key: calificaciones_finales_${cursoId}_');
+  }
+
+  // Guardar nombres de grupos
+  Future<void> _guardarNombresGrupos(BuildContext context) async {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+    final curso = args?['curso'] ?? 'LENGUA ESPAÑOLA';
+    final seccion = args?['seccion'] ?? 'A';
+
+    await _calificacionesService.guardarNombresGrupos(
+      curso: curso,
+      seccion: seccion,
+      nombreGrupo1: nombreGrupo1,
+      nombreGrupo2: nombreGrupo2,
+      nombreGrupo3: nombreGrupo3,
+      nombreGrupo4: nombreGrupo4,
+    );
+  }
+
+  // Cargar nombres de grupos
+  Future<void> _cargarNombresGrupos(String curso, String seccion) async {
+    final nombres = await _calificacionesService.obtenerNombresGrupos(
+      curso: curso,
+      seccion: seccion,
+    );
+
+    if (nombres != null && mounted) {
+      setState(() {
+        nombreGrupo1 = nombres['grupo1'] ?? 'GRUPO 1:';
+        nombreGrupo2 = nombres['grupo2'] ?? 'GRUPO 2:';
+        nombreGrupo3 = nombres['grupo3'] ?? 'GRUPO 3';
+        nombreGrupo4 = nombres['grupo4'] ?? 'GRUPO 4';
+      });
+    }
   }
 
   // Guardar automáticamente todas las notas
@@ -1143,7 +1312,7 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
 
     // También guardar las calificaciones finales
     if (context.mounted) {
-      _actualizarCalificacionesEnServicio(context);
+      await _actualizarCalificacionesEnServicio(context);
     }
   }
 
@@ -1173,6 +1342,9 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
         _datosInicializados = true;
       });
     }
+
+    // Cargar nombres de grupos
+    await _cargarNombresGrupos(curso, seccion);
   }
 
   Widget _buildPromedioCell(int fila, int colIndex) {
@@ -1189,11 +1361,11 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
     return Container(
       width: width,
       height: 32,
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFF9C4), // Color amarillo claro para celdas calculadas
+      decoration: BoxDecoration(
+        color: Colors.grey[200], // Color gris claro para celdas calculadas
         border: Border(
-          left: BorderSide(color: Colors.black, width: 1),
-          bottom: BorderSide(color: Colors.grey, width: 0.5),
+          left: BorderSide(color: Colors.grey[400]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[400]!, width: 0.5),
         ),
       ),
       alignment: Alignment.center,
@@ -1211,23 +1383,23 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
   }
 
   Widget _buildNumeroCell(int numero) {
-    return Container(
+    return SizedBox(
       width: 45,
       height: 32,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        border: const Border(
-          right: BorderSide(color: Colors.black, width: 1),
+      child: EstudianteNombreWidget(
+        numero: numero,
+        decoration: BoxDecoration(
+          border: Border(
+            right: BorderSide(color: Colors.grey[400]!, width: 1),
+          ),
+          color: Colors.grey[300],
         ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        numero.toString(),
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
           color: Colors.black87,
         ),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -1267,7 +1439,7 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
           ? Colors.grey[400]
           : (esColumnaP ? const Color(0xFFE0E0E0) : Colors.white),
         border: Border(
-          left: const BorderSide(color: Colors.black, width: 1),
+          left: BorderSide(color: Colors.grey[400]!, width: 1),
           bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
         ),
       ),

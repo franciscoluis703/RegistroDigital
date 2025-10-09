@@ -1,9 +1,13 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'curso_context_service.dart';
+import 'estudiantes_supabase_service.dart';
 
 class EstudiantesService {
   final CursoContextService _cursoContext = CursoContextService();
+  final EstudiantesSupabaseService _supabaseService = EstudiantesSupabaseService();
 
   // Generar clave única para cada curso
   Future<String> _getKeyEstudiantes() async {
@@ -62,6 +66,19 @@ class EstudiantesService {
 
   // Obtener solo los nombres (para mostrar en listas)
   Future<List<String>> obtenerNombresEstudiantes() async {
+    // Primero intentar obtener desde datos_generales
+    final datosGenerales = await obtenerDatosGenerales();
+    if (datosGenerales != null) {
+      final nombres = datosGenerales['nombres'] as List<String>;
+      return List.generate(40, (index) {
+        if (index < nombres.length && nombres[index].isNotEmpty) {
+          return nombres[index];
+        }
+        return '';
+      });
+    }
+
+    // Fallback: usar la lista antigua de estudiantes
     final estudiantes = await obtenerEstudiantes();
     return estudiantes
         .map((e) => (e['nombre'] as String?) ?? 'Estudiante ${estudiantes.indexOf(e) + 1}')
@@ -79,37 +96,21 @@ class EstudiantesService {
     required List<String> nombres,
     required List<Map<String, String>> camposAdicionales,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
     final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
-    final key = 'datos_generales_$cursoId';
 
-    final datos = {
-      'nombres': nombres,
-      'camposAdicionales': camposAdicionales,
-      'ultimaActualizacion': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setString(key, json.encode(datos));
+    // Guardar en Supabase
+    await _supabaseService.guardarDatosGenerales(
+      cursoId: cursoId,
+      nombres: nombres,
+      camposAdicionales: camposAdicionales,
+    );
   }
 
   // Obtener datos generales completos
   Future<Map<String, dynamic>?> obtenerDatosGenerales() async {
-    final prefs = await SharedPreferences.getInstance();
     final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
-    final key = 'datos_generales_$cursoId';
-    final datosJson = prefs.getString(key);
 
-    if (datosJson != null) {
-      final decoded = json.decode(datosJson);
-      return {
-        'nombres': (decoded['nombres'] as List<dynamic>).map((e) => e.toString()).toList(),
-        'camposAdicionales': (decoded['camposAdicionales'] as List<dynamic>)
-            .map((e) => Map<String, String>.from(e as Map))
-            .toList(),
-        'ultimaActualizacion': decoded['ultimaActualizacion'],
-      };
-    }
-
-    return null;
+    // Obtener desde Supabase
+    return await _supabaseService.obtenerDatosGenerales(cursoId);
   }
 }

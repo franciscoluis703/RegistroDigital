@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../../data/services/curso_context_service.dart';
+import '../../../../../data/services/estudiantes_supabase_service.dart';
+import '../../../../widgets/estudiante_nombre_widget.dart';
 
 class ParentescoScreen extends StatefulWidget {
   const ParentescoScreen({super.key});
@@ -8,6 +11,9 @@ class ParentescoScreen extends StatefulWidget {
 }
 
 class _ParentescoScreenState extends State<ParentescoScreen> {
+  final _cursoContext = CursoContextService();
+  final _estudiantesService = EstudiantesSupabaseService();
+
   List<Map<String, TextEditingController>> parentesco = List.generate(
     40,
     (_) => {
@@ -21,237 +27,270 @@ class _ParentescoScreenState extends State<ParentescoScreen> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    _cargarDatos();
+  }
+
+  @override
+  void dispose() {
+    for (var fila in parentesco) {
+      fila['padreNombre']!.dispose();
+      fila['padreTelefono']!.dispose();
+      fila['madreNombre']!.dispose();
+      fila['madreTelefono']!.dispose();
+      fila['tutorNombre']!.dispose();
+      fila['tutorTelefono']!.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _cargarDatos() async {
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
+    final parentescos = await _estudiantesService.obtenerDatosParentesco(cursoId);
+
+    if (parentescos != null && mounted) {
+      setState(() {
+        for (int i = 0; i < parentescos.length && i < 40; i++) {
+          parentesco[i]['padreNombre']!.text = parentescos[i]['padreNombre'] ?? '';
+          parentesco[i]['padreTelefono']!.text = parentescos[i]['padreTelefono'] ?? '';
+          parentesco[i]['madreNombre']!.text = parentescos[i]['madreNombre'] ?? '';
+          parentesco[i]['madreTelefono']!.text = parentescos[i]['madreTelefono'] ?? '';
+          parentesco[i]['tutorNombre']!.text = parentescos[i]['tutorNombre'] ?? '';
+          parentesco[i]['tutorTelefono']!.text = parentescos[i]['tutorTelefono'] ?? '';
+        }
+      });
+    }
+  }
+
+  Future<void> _guardarDatos() async {
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
+
+    // Convertir a lista de mapas
+    final parentescos = parentesco.map((e) => {
+      'padreNombre': e['padreNombre']!.text,
+      'padreTelefono': e['padreTelefono']!.text,
+      'madreNombre': e['madreNombre']!.text,
+      'madreTelefono': e['madreTelefono']!.text,
+      'tutorNombre': e['tutorNombre']!.text,
+      'tutorTelefono': e['tutorTelefono']!.text,
+    }).toList();
+
+    final success = await _estudiantesService.guardarDatosParentesco(
+      cursoId: cursoId,
+      parentescos: parentescos,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Datos guardados correctamente'
+              : 'Error al guardar los datos'),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Parentesco'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Guardar',
+            onPressed: _guardarDatos,
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              // Título principal
-              Container(
-                width: 1090,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                color: Colors.black,
-                alignment: Alignment.center,
-                child: const Text(
-                  'PARENTESCO',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+      body: Column(
+        children: [
+          const SizedBox(height: 24),
+          // Título
+          const Center(
+            child: Text(
+              'Parentesco',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
-              // Cabeceras de secciones (PADRE, MADRE, TUTOR)
-              Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                      color: Colors.white,
-                    ),
-                  ),
-                  Container(
-                    width: 347,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                      color: Colors.grey[400],
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'PADRE',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 347,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                      color: Colors.grey[400],
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'MADRE',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 346,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                      color: Colors.grey[400],
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'TUTOR',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              // Cabecera de columnas
-              Row(
-                children: const [
-                  _HeaderCell('', width: 50),
-                  _HeaderCell('Nombre(s) y\nApellido(s)', width: 230),
-                  _HeaderCell('Teléfono', width: 117),
-                  _HeaderCell('Nombre(s) y\nApellido(s)', width: 230),
-                  _HeaderCell('Teléfono', width: 117),
-                  _HeaderCell('Nombre(s) y\nApellido(s)', width: 229),
-                  _HeaderCell('Teléfono', width: 117),
-                ],
-              ),
-              // Filas de datos
-              SizedBox(
-                height: 600,
-                width: 1090,
-                child: ListView.builder(
-                  itemCount: parentesco.length,
-                  itemBuilder: (context, index) {
-                    final fila = parentesco[index];
-                    return Row(
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Tabla con scroll
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Fila de encabezados
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _NumberCell(index + 1),
-                        _EditableCell(controller: fila['padreNombre']!, width: 230),
-                        _EditableCell(controller: fila['padreTelefono']!, width: 117),
-                        _EditableCell(controller: fila['madreNombre']!, width: 230),
-                        _EditableCell(controller: fila['madreTelefono']!, width: 117),
-                        _EditableCell(controller: fila['tutorNombre']!, width: 229),
-                        _EditableCell(controller: fila['tutorTelefono']!, width: 117),
+                        _buildHeaderColumn('#', 60),
+                        const SizedBox(width: 16),
+                        _buildHeaderColumn('Padre\nNombre(s) y Apellido(s)', 240),
+                        const SizedBox(width: 16),
+                        _buildHeaderColumn('Padre\nTeléfono', 160),
+                        const SizedBox(width: 16),
+                        _buildHeaderColumn('Madre\nNombre(s) y Apellido(s)', 240),
+                        const SizedBox(width: 16),
+                        _buildHeaderColumn('Madre\nTeléfono', 160),
+                        const SizedBox(width: 16),
+                        _buildHeaderColumn('Tutor\nNombre(s) y Apellido(s)', 240),
+                        const SizedBox(width: 16),
+                        _buildHeaderColumn('Tutor\nTeléfono', 160),
                       ],
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Filas de estudiantes (1-40)
+                    ...List.generate(40, (index) {
+                      final fila = parentesco[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildNumberField(index + 1, 60),
+                            const SizedBox(width: 16),
+                            _buildTextField(
+                              controller: fila['padreNombre']!,
+                              width: 240,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTextField(
+                              controller: fila['padreTelefono']!,
+                              width: 160,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTextField(
+                              controller: fila['madreNombre']!,
+                              width: 240,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTextField(
+                              controller: fila['madreTelefono']!,
+                              width: 160,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTextField(
+                              controller: fila['tutorNombre']!,
+                              width: 240,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTextField(
+                              controller: fila['tutorTelefono']!,
+                              width: 160,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 32),
+
+                    // Botón Guardar (moverlo DENTRO del Column)
+                    Center(
+                      child: SizedBox(
+                        width: 200,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _guardarDatos,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFbfa661),
+                          ),
+                          child: const Text(
+                            'Guardar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _guardarDatos,
-                child: const Text('Guardar'),
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderColumn(String label, double width) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNumberField(int number, double width) {
+    return SizedBox(
+      width: width,
+      height: 40,
+      child: EstudianteNombreWidget(
+        numero: number,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[400]!, width: 1),
+          color: Colors.grey[300],
+        ),
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required double width,
+  }) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[400]!, width: 1),
+        ),
+        child: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            isDense: true,
           ),
         ),
-      ),
-    );
-  }
-
-  void _guardarDatos() {
-    for (var i = 0; i < parentesco.length; i++) {
-      // TODO: Save parent data to database
-      // final fila = parentesco[i];
-      // final data = {
-      //   'numero': i + 1,
-      //   'padreNombre': fila['padreNombre']!.text,
-      //   'padreTelefono': fila['padreTelefono']!.text,
-      //   'madreNombre': fila['madreNombre']!.text,
-      //   'madreTelefono': fila['madreTelefono']!.text,
-      //   'tutorNombre': fila['tutorNombre']!.text,
-      //   'tutorTelefono': fila['tutorTelefono']!.text,
-      // };
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Datos guardados correctamente')),
-    );
-  }
-}
-
-class _HeaderCell extends StatelessWidget {
-  final String label;
-  final double? width;
-  const _HeaderCell(this.label, {this.width});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width ?? 120,
-      height: 50,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black, width: 1),
-        color: Colors.white,
-      ),
-      alignment: Alignment.center,
-      padding: const EdgeInsets.all(8),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-}
-
-class _EditableCell extends StatelessWidget {
-  final TextEditingController controller;
-  final double? width;
-  const _EditableCell({required this.controller, this.width});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width ?? 120,
-      height: 40,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black, width: 1),
-        color: Colors.white,
-      ),
-      child: TextField(
-        controller: controller,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 12),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        ),
-      ),
-    );
-  }
-}
-
-class _NumberCell extends StatelessWidget {
-  final int number;
-  const _NumberCell(this.number);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 50,
-      height: 40,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black, width: 1),
-        color: Colors.white,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        number.toString(),
-        style: const TextStyle(fontSize: 12),
-        textAlign: TextAlign.center,
       ),
     );
   }
