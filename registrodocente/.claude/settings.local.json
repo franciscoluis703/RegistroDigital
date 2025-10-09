@@ -45,7 +45,9 @@
       "Bash(dart pub global activate:*)",
       "Bash($HOME/.pub-cache/bin/flutterfire configure --project=registrodocente-d87d7 --platforms=android,ios,web,linux,windows,macos --yes)",
       "Bash($HOME/.pub-cache/bin/flutterfire configure --project=registro-docente-app --platforms=android,ios,web,linux,windows,macos --yes)",
-      "Bash(nc localhost 37297)"
+      "Bash(nc localhost 37297)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
