@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _actividadesFrecuentes = actividadesOrdenadas
             .map((e) => e.key)
-            .take(6)
+            .take(3)
             .toList();
       });
     } else {
@@ -116,10 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _actividadesFrecuentes = [
           'asistencia',
           'calificaciones',
-          'promocion',
-          'horario',
-          'calendario',
-          'cursos',
+          'notas',
         ];
       });
     }
@@ -273,14 +270,57 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Botón prominente de Cursos
-                DojoButton(
-                  text: 'Mis Cursos',
-                  icon: Icons.class_outlined,
-                  style: DojoButtonStyle.secondary,
-                  size: DojoButtonSize.large,
-                  isFullWidth: true,
-                  onPressed: () => _navegarAActividad('cursos', '/cursos'),
+                // Botón prominente de Cursos con diseño destacado
+                DojoCard(
+                  style: DojoCardStyle.gradient,
+                  padding: const EdgeInsets.all(20),
+                  onTap: () => _navegarAActividad('cursos', '/cursos'),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.school,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Mis Cursos',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 22,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Gestiona tus grupos y estudiantes',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 24,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -302,31 +342,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 _actividadesFrecuentes.isEmpty
                     ? const Center(child: CircularProgressIndicator())
-                    : GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.95,
-                        ),
-                        itemCount: _actividadesFrecuentes.length,
-                        itemBuilder: (context, index) {
-                          final actividadId = _actividadesFrecuentes[index];
+                    : Row(
+                        children: _actividadesFrecuentes.map((actividadId) {
                           final actividad = _actividadesDisponibles[actividadId];
                           if (actividad == null) return const SizedBox.shrink();
 
-                          return _QuickAccessCard(
-                            icon: actividad['icon'] as IconData,
-                            label: actividad['label'] as String,
-                            color: actividad['color'] as Color,
-                            onTap: () => _navegarAActividad(
-                              actividadId,
-                              actividad['route'] as String,
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: _QuickAccessCard(
+                                icon: actividad['icon'] as IconData,
+                                label: actividad['label'] as String,
+                                color: actividad['color'] as Color,
+                                onTap: () => _navegarAActividad(
+                                  actividadId,
+                                  actividad['route'] as String,
+                                ),
+                              ),
                             ),
                           );
-                        },
+                        }).toList(),
                       ),
                 const SizedBox(height: 32),
 
@@ -460,26 +495,27 @@ class _QuickAccessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DojoCard(
       style: DojoCardStyle.normal,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 32),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
+                  fontSize: 12,
                 ),
             textAlign: TextAlign.center,
             maxLines: 2,
