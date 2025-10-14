@@ -461,26 +461,26 @@ class _QuickAccessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DuoCard(
       style: DuoCardStyle.flat,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  fontSize: 15,
+                  fontSize: 13,
                 ),
             textAlign: TextAlign.center,
             maxLines: 2,
