@@ -1,9 +1,5 @@
-
 import 'package:flutter/material.dart';
-
-import '../../../../data/repositories_implementation/connectivity_repository_impl.dart';
-import '../../../../domain/repositories/connectivity_repository.dart';
-import '../../../../data/services/supabase_service.dart';
+import '../../../../data/services/firebase/firebase_auth_service.dart';
 import '../../../../../app/presentation/routes/routes.dart';
 
 class SplashView extends StatefulWidget {
@@ -23,25 +19,35 @@ class _SplashViewState extends State<SplashView> {
 
 
   Future<void> _init() async {
-    ConnectivityRepository connectivityRepository =
-        ConnectivityRepositoryImpl();
-    final hasInternet = await connectivityRepository.hasInternet;
+    try {
+      // Esperar un momento para mostrar el splash
+      await Future.delayed(const Duration(seconds: 2));
 
-    // Esperar un momento para mostrar el splash
-    await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
-    if (!mounted) return;
+      // Verificar si el usuario está autenticado con Firebase
+      final authService = FirebaseAuthService();
+      final isAuthenticated = authService.isAuthenticated;
 
-    // Verificar si el usuario está autenticado
-    final supabase = SupabaseService.instance;
-    final isAuthenticated = supabase.isAuthenticated;
+      print('🔍 Splash: Usuario autenticado: $isAuthenticated');
 
-    if (isAuthenticated) {
-      // Usuario autenticado - ir a Home
-      Navigator.of(context).pushReplacementNamed(Routes.home);
-    } else {
-      // Usuario no autenticado - ir a Login (nueva pantalla con Supabase)
-      Navigator.of(context).pushReplacementNamed(Routes.login);
+      if (isAuthenticated) {
+        // Usuario autenticado - ir a Home
+        print('➡️ Navegando a Home');
+        Navigator.of(context).pushReplacementNamed(Routes.home);
+      } else {
+        // Usuario no autenticado - ir a Sign In
+        print('➡️ Navegando a Sign In');
+        Navigator.of(context).pushReplacementNamed(Routes.signIn);
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error en splash: $e');
+      print('Stack trace: $stackTrace');
+
+      if (!mounted) return;
+
+      // En caso de error, ir al sign in
+      Navigator.of(context).pushReplacementNamed(Routes.signIn);
     }
   }
 
@@ -59,7 +65,7 @@ class _SplashViewState extends State<SplashView> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Registro Docente',
+              'Registro Digital',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),

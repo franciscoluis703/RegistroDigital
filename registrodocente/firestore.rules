@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regla general: solo usuarios autenticados pueden acceder a sus propios datos
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Perfil de usuario
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Cursos del usuario
+      match /cursos/{cursoId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // Estudiantes dentro de cada curso
+        match /estudiantes/{estudianteId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        // Datos generales de estudiantes
+        match /datos_generales/{docId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        // Asistencias
+        match /asistencias/{asistenciaId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        // Calificaciones
+        match /calificaciones/{calificacionId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+
+      // Notas del usuario
+      match /notas/{notaId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Horarios
+      match /horarios/{horarioId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Evidencias - Metadata de carpetas
+      match /evidencias/metadata/carpetas/{carpetaId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Evidencias - Metadata de fotos
+      match /evidencias/metadata/fotos/{fotoId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Activity logs
+      match /activity_logs/{logId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

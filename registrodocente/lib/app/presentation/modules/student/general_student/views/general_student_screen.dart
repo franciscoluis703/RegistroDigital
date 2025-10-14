@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../../data/services/estudiantes_service.dart';
+import '../../../../../data/services/firebase/estudiantes_firestore_service.dart';
+import '../../../../../data/services/curso_context_service.dart';
 
 class GeneralStudentScreen extends StatefulWidget {
   const GeneralStudentScreen({super.key});
@@ -9,7 +10,8 @@ class GeneralStudentScreen extends StatefulWidget {
 }
 
 class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
-  final EstudiantesService _estudiantesService = EstudiantesService();
+  final _estudiantesService = EstudiantesFirestoreService();
+  final _cursoContext = CursoContextService();
 
   // Controladores para los nombres (40 estudiantes)
   List<TextEditingController> nombresControllers =
@@ -27,7 +29,8 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
   }
 
   Future<void> _cargarEstudiantes() async {
-    final datos = await _estudiantesService.obtenerDatosGenerales();
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
+    final datos = await _estudiantesService.obtenerDatosGenerales(cursoId);
 
     if (datos != null) {
       setState(() {
@@ -58,7 +61,8 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
   }
 
   // Guardar automáticamente
-  void _guardarAutomaticamente() {
+  void _guardarAutomaticamente() async {
+    final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
     final nombres = nombresControllers.map((c) => c.text).toList();
     final campos = camposControllers.map((fila) {
       final Map<String, String> filaDatos = {};
@@ -69,6 +73,7 @@ class _GeneralStudentScreenState extends State<GeneralStudentScreen> {
     }).toList();
 
     _estudiantesService.guardarDatosGenerales(
+      cursoId: cursoId,
       nombres: nombres,
       camposAdicionales: campos,
     );

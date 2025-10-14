@@ -26,4 +26,6 @@ class Routes {
   static const calendarioEscolar = '/calendario-escolar';
   static const horarioClase = '/horario-clase';
   static const notas = '/notas';
+  static const evidencias = '/evidencias';
+  static const authProviders = '/auth-providers';
 }

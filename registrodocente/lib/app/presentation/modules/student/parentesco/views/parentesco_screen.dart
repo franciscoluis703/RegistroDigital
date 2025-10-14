@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../data/services/curso_context_service.dart';
-import '../../../../../data/services/estudiantes_supabase_service.dart';
+import '../../../../../data/services/firebase/estudiantes_firestore_service.dart';
 import '../../../../widgets/estudiante_nombre_widget.dart';
 
 class ParentescoScreen extends StatefulWidget {
@@ -12,7 +12,7 @@ class ParentescoScreen extends StatefulWidget {
 
 class _ParentescoScreenState extends State<ParentescoScreen> {
   final _cursoContext = CursoContextService();
-  final _estudiantesService = EstudiantesSupabaseService();
+  final _estudiantesService = EstudiantesFirestoreService();
 
   List<Map<String, TextEditingController>> parentesco = List.generate(
     40,

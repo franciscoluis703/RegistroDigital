@@ -1,0 +1,55 @@
+<svg width="240" height="60" viewBox="0 0 240 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo Horizontal: Registro Docente -->
+  <!-- Diseño original sin derechos de autor -->
+
+  <!-- Ícono principal: Libro digital con estrella -->
+  <g id="icon">
+    <!-- Libro abierto (izquierda) -->
+    <path d="M 8 15 Q 8 12, 12 12 L 24 12 Q 28 12, 28 15 L 28 42 Q 28 45, 24 45 L 12 45 Q 8 45, 8 42 Z"
+          fill="#5B9FED" opacity="0.9"/>
+
+    <!-- Libro abierto (derecha) -->
+    <path d="M 32 15 Q 32 12, 36 12 L 48 12 Q 52 12, 52 15 L 52 42 Q 52 45, 48 45 L 36 45 Q 32 45, 32 42 Z"
+          fill="#6BCF8F" opacity="0.9"/>
+
+    <!-- Línea central del libro -->
+    <line x1="30" y1="12" x2="30" y2="45" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Páginas del libro (líneas decorativas) -->
+    <line x1="12" y1="20" x2="24" y2="20" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+    <line x1="12" y1="26" x2="24" y2="26" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+    <line x1="12" y1="32" x2="24" y2="32" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+
+    <line x1="36" y1="20" x2="48" y2="20" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+    <line x1="36" y1="26" x2="48" y2="26" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+    <line x1="36" y1="32" x2="48" y2="32" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+
+    <!-- Estrella de excelencia (arriba del libro) -->
+    <path d="M 30 4 L 32 9 L 37.5 9.5 L 33.5 13 L 34.5 18.5 L 30 16 L 25.5 18.5 L 26.5 13 L 22.5 9.5 L 28 9 Z"
+          fill="#FFD54F" stroke="#FFAB40" stroke-width="1.5"/>
+
+    <!-- Punto brillante en la estrella -->
+    <circle cx="30" cy="8" r="1.5" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Texto del logo -->
+  <g id="text">
+    <!-- "Registro Docente" -->
+    <text x="65" y="28" font-family="'Nunito', sans-serif" font-size="20" font-weight="800" fill="#2D3748" letter-spacing="0.5">
+      Registro
+    </text>
+    <text x="65" y="48" font-family="'Nunito', sans-serif" font-size="20" font-weight="800" fill="#5B9FED" letter-spacing="0.5">
+      Docente
+    </text>
+
+    <!-- Tagline opcional -->
+    <text x="158" y="38" font-family="'Nunito', sans-serif" font-size="10" font-weight="600" fill="#A0AEC0" letter-spacing="0.3">
+      • Tu aula digital
+    </text>
+  </g>
+
+  <!-- Decoración: partículas flotantes -->
+  <circle cx="55" cy="15" r="2" fill="#FFD54F" opacity="0.6"/>
+  <circle cx="50" cy="50" r="2.5" fill="#B388FF" opacity="0.5"/>
+  <circle cx="155" cy="18" r="2" fill="#FF6B9D" opacity="0.5"/>
+</svg>

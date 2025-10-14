@@ -47,7 +47,11 @@
       "Bash($HOME/.pub-cache/bin/flutterfire configure --project=registro-docente-app --platforms=android,ios,web,linux,windows,macos --yes)",
       "Bash(nc localhost 37297)",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(firebase hosting:channel:list:*)",
+      "Bash(git checkout:*)",
+      "Bash(mkdir:*)",
+      "Read(//tmp/**)"
     ],
     "deny": [],
     "ask": []

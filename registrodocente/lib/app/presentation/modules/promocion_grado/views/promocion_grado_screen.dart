@@ -5,7 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../../../data/services/calificaciones_service.dart';
+import '../../../../data/services/firebase/calificaciones_firestore_service.dart';
 import '../../../../data/services/curso_context_service.dart';
 import '../../../widgets/estudiante_nombre_widget.dart';
 
@@ -19,7 +19,7 @@ class PromocionGradoScreen extends StatefulWidget {
 class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
   final int numRows = 40;
   late List<List<TextEditingController>> controllers;
-  final _calificacionesService = CalificacionesService();
+  final _calificacionesService = CalificacionesFirestoreService();
   final _cursoContext = CursoContextService();
   bool _calificacionesCargadas = false;
 
@@ -384,9 +384,8 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
       fila.map((controller) => controller.text).toList()
     ).toList();
 
-    await _calificacionesService.guardarPromocionGrado(
-      curso: cursoId,
-      seccion: '', // Ya no se usa por separado, está incluido en cursoId
+    await _calificacionesService.guardarPromocionGradoMatricial(
+      cursoId: cursoId,
       datosPromocion: datosPromocion,
       asignatura: _asignaturaController.text,
       grado: _gradoController.text,
@@ -409,10 +408,7 @@ class _PromocionGradoScreenState extends State<PromocionGradoScreen> {
     print('🔍 CARGANDO CALIFICACIONES FINALES con cursoId: $cursoId');
 
     // Intentar cargar datos guardados previamente
-    final datosGuardados = await _calificacionesService.obtenerPromocionGrado(
-      curso: cursoId,
-      seccion: '', // Ya no se usa por separado
-    );
+    final datosGuardados = await _calificacionesService.obtenerPromocionGradoMatricial(cursoId);
 
     if (datosGuardados != null) {
       print('   Datos de promoción guardados encontrados');

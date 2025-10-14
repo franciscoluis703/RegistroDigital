@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'presentation/routes/app_routes.dart';
 import 'presentation/routes/routes.dart';
-import 'presentation/themes/app_theme.dart';
+// import 'presentation/themes/app_theme.dart'; // Temporalmente deshabilitado para debug
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -10,11 +10,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Registro Docente',
+      title: 'Registro Digital',
       debugShowCheckedModeBanner: false,
-      initialRoute: Routes.splash,
+      initialRoute: Routes.signIn,
       routes: appRoutes,
-      theme: AppTheme.lightTheme,
+      // Tema básico sin GoogleFonts para debugging
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+        ),
+      ),
     );
   }
 }

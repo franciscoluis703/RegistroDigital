@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
-import '../../data/services/perfil_supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/services/firebase/firebase_auth_service.dart';
 
 /// Provider para gestionar el estado global del usuario
+/// MIGRADO A FIREBASE - Usa FirebaseAuthService en lugar de Supabase
 class UserProvider extends ChangeNotifier {
-  final PerfilSupabaseService _perfilService = PerfilSupabaseService();
+  final FirebaseAuthService _authService = FirebaseAuthService();
 
   String _nombre = '';
   String _email = '';
@@ -34,28 +36,60 @@ class UserProvider extends ChangeNotifier {
     return _nombre[0].toUpperCase();
   }
 
-  /// Cargar datos del usuario desde Supabase
+  /// Cargar datos del usuario desde Firebase
   Future<void> cargarDatosUsuario() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final perfil = await _perfilService.obtenerPerfil();
+      // Obtener perfil desde Firebase Firestore
+      final perfil = await _authService.getCurrentUserProfile();
 
       if (perfil != null) {
-        _nombre = perfil['nombre'] ?? '';
+        _nombre = perfil['nombre_completo'] ?? '';
         _email = perfil['email'] ?? '';
-        _fotoPerfil = perfil['foto_perfil'] ?? 'https://i.pravatar.cc/150?img=3';
+        _fotoPerfil = perfil['avatar_url'] ?? 'https://i.pravatar.cc/150?img=3';
         _centroEducativo = perfil['centro_educativo'] ?? 'Centro Educativo Eugenio M. de Hostos';
         _regional = perfil['regional'] ?? '17';
         _distrito = perfil['distrito'] ?? '04';
         _genero = perfil['genero'];
+
+        debugPrint('✅ Perfil cargado desde Firebase');
+      } else {
+        // Fallback: cargar desde SharedPreferences si no existe perfil
+        await _cargarDesdeSharedPreferences();
       }
     } catch (e) {
-      debugPrint('Error al cargar datos del usuario: $e');
+      debugPrint('Error al cargar datos del usuario desde Firebase: $e');
+      // Intentar cargar desde SharedPreferences como fallback
+      await _cargarDesdeSharedPreferences();
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Cargar datos desde SharedPreferences (fallback)
+  Future<void> _cargarDesdeSharedPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _nombre = prefs.getString('usuario_nombre') ?? '';
+      _email = prefs.getString('usuario_email') ?? '';
+
+      // Si encontramos datos en SharedPreferences, intentar crear el perfil en Firebase
+      if (_nombre.isNotEmpty || _email.isNotEmpty) {
+        debugPrint('Migrando datos de SharedPreferences a Firebase...');
+        try {
+          await _authService.updateProfile(
+            nombreCompleto: _nombre.isEmpty ? null : _nombre,
+          );
+          debugPrint('✅ Perfil migrado exitosamente a Firebase');
+        } catch (e) {
+          debugPrint('Error al migrar perfil a Firebase: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al cargar desde SharedPreferences: $e');
     }
   }
 

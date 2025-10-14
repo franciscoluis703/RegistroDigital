@@ -59,7 +59,7 @@ class _AvatarGeneroWidgetState extends State<AvatarGeneroWidget> {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: widget.radius,
-      backgroundColor: _getColorForGenero().withValues(alpha: 0.2),
+      backgroundColor: _getColorForGenero().withOpacity(0.2),
       child: Icon(
         _getIconForGenero(),
         size: widget.radius * 1.2,

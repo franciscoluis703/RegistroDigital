@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../data/services/supabase_service.dart';
+import '../../../../data/services/firebase/firebase_auth_service.dart';
 
 class ForgotPasswordView extends StatefulWidget {
   const ForgotPasswordView({super.key});
@@ -26,8 +26,12 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     setState(() => _isLoading = true);
 
     try {
-      final supabase = SupabaseService.instance;
-      await supabase.resetPassword(_emailController.text.trim());
+      final authService = FirebaseAuthService();
+      final result = await authService.resetPassword(_emailController.text.trim());
+
+      if (!result['success']) {
+        throw Exception(result['message']);
+      }
 
       if (mounted) {
         setState(() {
@@ -81,7 +85,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -104,7 +108,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           Text(
             'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -116,7 +120,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -132,11 +136,11 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3), width: 2),
+                  borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.3), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3), width: 2),
+                  borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.3), width: 2),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -161,14 +165,14 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             height: 56,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
+                colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.4),
+                  color: colorScheme.primary.withOpacity(0.4),
                   blurRadius: 15,
                   spreadRadius: 2,
                   offset: const Offset(0, 6),
@@ -226,7 +230,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.1),
+            color: Colors.green.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -249,7 +253,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         Text(
           'Hemos enviado un enlace de recuperación a ${_emailController.text.trim()}. Por favor revisa tu correo electrónico.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
+            color: colorScheme.onSurface.withOpacity(0.6),
           ),
           textAlign: TextAlign.center,
         ),
@@ -260,14 +264,14 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           height: 56,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
+              colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withValues(alpha: 0.4),
+                color: colorScheme.primary.withOpacity(0.4),
                 blurRadius: 15,
                 spreadRadius: 2,
                 offset: const Offset(0, 6),

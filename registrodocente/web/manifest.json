@@ -1,11 +1,11 @@
 {
-    "name": "Registro Docente",
-    "short_name": "Registro Docente",
+    "name": "Registro Digital",
+    "short_name": "Registro Digital",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#1976D2",
     "theme_color": "#1976D2",
-    "description": "Sistema de Registro Docente - Gestión educativa para profesores",
+    "description": "Registro Digital - Sistema de gestión educativa para profesores",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

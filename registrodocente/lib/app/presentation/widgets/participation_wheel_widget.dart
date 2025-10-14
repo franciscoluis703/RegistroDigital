@@ -110,7 +110,7 @@ class _ParticipationWheelWidgetState extends State<ParticipationWheelWidget>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -163,7 +163,7 @@ class _ParticipationWheelWidgetState extends State<ParticipationWheelWidget>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.withValues(alpha: 0.4),
+                        color: Colors.purple.withOpacity(0.4),
                         blurRadius: 15,
                         spreadRadius: 3,
                       ),
@@ -173,7 +173,7 @@ class _ParticipationWheelWidgetState extends State<ParticipationWheelWidget>
                     child: Icon(
                       Icons.casino,
                       size: 60,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ),
@@ -265,7 +265,7 @@ class _ParticipationWheelWidgetState extends State<ParticipationWheelWidget>
                     activeTrackColor: Colors.purple[600],
                     inactiveTrackColor: Colors.purple[200],
                     thumbColor: Colors.purple[700],
-                    overlayColor: Colors.purple.withValues(alpha: 0.2),
+                    overlayColor: Colors.purple.withOpacity(0.2),
                     trackHeight: 4,
                   ),
                   child: Slider(

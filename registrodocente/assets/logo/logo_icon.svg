@@ -1,0 +1,53 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo Ícono Cuadrado: Registro Docente -->
+  <!-- Diseño original sin derechos de autor -->
+
+  <!-- Fondo con gradiente suave (opcional para el ícono de app) -->
+  <rect width="120" height="120" rx="28" fill="url(#bg-gradient)"/>
+
+  <defs>
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="120" y2="120">
+      <stop offset="0%" stop-color="#5B9FED"/>
+      <stop offset="100%" stop-color="#6BCF8F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ícono principal: Libro digital con estrella -->
+  <g id="main-icon" transform="translate(25, 25)">
+    <!-- Libro abierto (izquierda) -->
+    <path d="M 5 15 Q 5 10, 10 10 L 28 10 Q 33 10, 33 15 L 33 58 Q 33 63, 28 63 L 10 63 Q 5 63, 5 58 Z"
+          fill="#FFFFFF" opacity="0.95"/>
+
+    <!-- Libro abierto (derecha) -->
+    <path d="M 37 15 Q 37 10, 42 10 L 60 10 Q 65 10, 65 15 L 65 58 Q 65 63, 60 63 L 42 63 Q 37 63, 37 58 Z"
+          fill="#FFFFFF" opacity="0.95"/>
+
+    <!-- Línea central del libro -->
+    <line x1="35" y1="10" x2="35" y2="63" stroke="#E2E8F0" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Páginas del libro (líneas decorativas izquierda) -->
+    <line x1="12" y1="22" x2="26" y2="22" stroke="#5B9FED" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+    <line x1="12" y1="30" x2="26" y2="30" stroke="#5B9FED" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+    <line x1="12" y1="38" x2="26" y2="38" stroke="#5B9FED" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+    <line x1="12" y1="46" x2="26" y2="46" stroke="#5B9FED" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+
+    <!-- Páginas del libro (líneas decorativas derecha) -->
+    <line x1="44" y1="22" x2="58" y2="22" stroke="#6BCF8F" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+    <line x1="44" y1="30" x2="58" y2="30" stroke="#6BCF8F" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+    <line x1="44" y1="38" x2="58" y2="38" stroke="#6BCF8F" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+    <line x1="44" y1="46" x2="58" y2="46" stroke="#6BCF8F" stroke-width="2.5" opacity="0.7" stroke-linecap="round"/>
+
+    <!-- Estrella de excelencia (arriba del libro) -->
+    <path d="M 35 0 L 38.5 8 L 47 9 L 41 14.5 L 42.5 23 L 35 18.5 L 27.5 23 L 29 14.5 L 23 9 L 31.5 8 Z"
+          fill="#FFD54F" stroke="#FFAB40" stroke-width="2.5" stroke-linejoin="round"/>
+
+    <!-- Punto brillante en la estrella -->
+    <circle cx="35" cy="9" r="2.5" fill="#FFFFFF"/>
+
+    <!-- Decoración: pequeñas partículas -->
+    <circle cx="10" cy="8" r="3" fill="#FFFFFF" opacity="0.6"/>
+    <circle cx="60" cy="8" r="2.5" fill="#FFFFFF" opacity="0.5"/>
+    <circle cx="8" cy="60" r="2.5" fill="#FFFFFF" opacity="0.5"/>
+    <circle cx="62" cy="60" r="3" fill="#FFFFFF" opacity="0.6"/>
+  </g>
+</svg>

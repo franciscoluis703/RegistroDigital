@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../routes/routes.dart';
-import '../../../../data/services/supabase_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../themes/app_colors.dart';
+import '../../../widgets/common/dojo_button.dart';
+import '../../../widgets/common/dojo_input.dart';
+import '../../../widgets/common/dojo_card.dart';
+import '../../../../data/services/firebase/firebase_auth_service.dart';
+import '../../../../core/providers/user_provider.dart';
 
+/// 🎨 Pantalla de Inicio de Sesión - Diseño ClassDojo
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
 
@@ -14,6 +20,7 @@ class _SignInViewState extends State<SignInView> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = FirebaseAuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -24,8 +31,7 @@ class _SignInViewState extends State<SignInView> {
   }
 
   Future<void> _checkExistingSession() async {
-    final supabase = SupabaseService.instance;
-    final user = supabase.currentUser;
+    final user = _authService.currentUser;
 
     if (user != null && mounted) {
       // Usuario ya tiene sesión activa, redirigir a home
@@ -46,31 +52,77 @@ class _SignInViewState extends State<SignInView> {
     setState(() => _isLoading = true);
 
     try {
-      final supabase = SupabaseService.instance;
-
-      final response = await supabase.client!.auth.signInWithPassword(
+      // Iniciar sesión con Firebase
+      final result = await _authService.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      if (response.user == null) {
-        throw Exception('Error al iniciar sesión');
+      if (!result['success']) {
+        throw Exception(result['message']);
       }
 
-      // Guardar datos del usuario en SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('usuario_nombre', response.user!.userMetadata?['name'] ?? 'Usuario');
-      await prefs.setString('usuario_email', response.user!.email ?? '');
-
       if (mounted) {
+        // Cargar datos del usuario en el provider
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.cargarDatosUsuario();
+
+        // Redirigir a home
         Navigator.of(context).pushReplacementNamed(Routes.home);
+
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Bienvenido de nuevo! 🎉'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: Credenciales incorrectas'),
-            backgroundColor: Colors.red,
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _authService.signInWithGoogle();
+
+      if (!result['success']) {
+        throw Exception(result['message']);
+      }
+
+      if (mounted) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.cargarDatosUsuario();
+
+        Navigator.of(context).pushReplacementNamed(Routes.home);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Bienvenido! 🎉'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -83,252 +135,236 @@ class _SignInViewState extends State<SignInView> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 4,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.school,
-                      size: 60,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Título
-                  Text(
-                    'Registro Docente',
-                    style: Theme.of(context).textTheme.headlineLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Bienvenido de nuevo',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Email
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Correo electrónico',
-                        prefixIcon: Icon(Icons.email, color: colorScheme.primary),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3), width: 2),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3), width: 2),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingresa tu correo';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Por favor ingresa un correo válido';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Contraseña
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        prefixIcon: Icon(Icons.lock, color: colorScheme.primary),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3), width: 2),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3), width: 2),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Logo con diseño ClassDojo
+                    Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            blurRadius: 30,
+                            spreadRadius: 8,
+                            offset: const Offset(0, 12),
                           ),
-                          onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
-                          },
+                        ],
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 6,
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingresa tu contraseña';
-                        }
-                        return null;
-                      },
+                      child: const Icon(
+                        Icons.menu_book,
+                        size: 70,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 40),
 
-                  // Botón de inicio de sesión
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.4),
-                          blurRadius: 15,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                    // Título con estilo ClassDojo
+                    Text(
+                      'Registro Docente',
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w900,
+                          ),
+                      textAlign: TextAlign.center,
                     ),
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            )
-                          : const Text(
-                              'Iniciar Sesión',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                    const SizedBox(height: 12),
+                    Text(
+                      '¡Bienvenido de nuevo! 👋',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Card contenedor del formulario
+                    DojoCard(
+                      style: DojoCardStyle.normal,
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        children: [
+                          // Email Input
+                          DojoInput(
+                            label: 'Correo Electrónico',
+                            hint: 'tu@correo.com',
+                            prefixIcon: Icons.email_outlined,
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingresa tu correo';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Correo inválido';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Password Input
+                          DojoInput(
+                            label: 'Contraseña',
+                            hint: 'Tu contraseña segura',
+                            prefixIcon: Icons.lock_outline,
+                            suffixIcon: _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            onSuffixIconPressed: () {
+                              setState(() => _obscurePassword = !_obscurePassword);
+                            },
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _handleSignIn(),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingresa tu contraseña';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Forgot Password Link
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pushNamed(Routes.forgotPassword);
+                              },
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                              child: Text(
+                                '¿Olvidaste tu contraseña?',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                               ),
                             ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                          ),
+                          const SizedBox(height: 28),
 
-                  // Link para recuperar contraseña
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(Routes.forgotPassword);
-                      },
-                      child: Text(
-                        '¿Olvidaste tu contraseña?',
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                          // Sign In Button
+                          DojoButton(
+                            text: 'Iniciar Sesión',
+                            icon: Icons.login,
+                            style: DojoButtonStyle.primary,
+                            size: DojoButtonSize.large,
+                            isFullWidth: true,
+                            isLoading: _isLoading,
+                            onPressed: _handleSignIn,
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 28),
 
-                  // Link para registrarse
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '¿No tienes cuenta? ',
-                        style: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacementNamed(Routes.signUp);
-                        },
-                        child: Text(
-                          'Regístrate',
-                          style: TextStyle(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+                    // Divider con texto
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Divider(
+                            color: AppColors.divider,
+                            thickness: 1.5,
                           ),
                         ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'O continúa con',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textTertiary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                        const Expanded(
+                          child: Divider(
+                            color: AppColors.divider,
+                            thickness: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Google Sign In Button
+                    DojoButton(
+                      text: 'Google',
+                      icon: Icons.g_mobiledata,
+                      style: DojoButtonStyle.outlined,
+                      size: DojoButtonSize.large,
+                      isFullWidth: true,
+                      onPressed: _isLoading ? null : _handleGoogleSignIn,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Sign Up Link
+                    DojoCard(
+                      style: DojoCardStyle.primary,
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '¿No tienes cuenta? ',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pushReplacementNamed(Routes.signUp);
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                            ),
+                            child: Text(
+                              'Regístrate aquí',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Version info
+                    Text(
+                      'Versión 1.0.0 • ClassDojo Style',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -7,7 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../../../../data/services/calificaciones_service.dart';
+import '../../../../data/services/firebase/calificaciones_firestore_service.dart';
 import '../../../../data/services/curso_context_service.dart';
 import '../../../widgets/estudiante_nombre_widget.dart';
 
@@ -27,7 +27,7 @@ class _CalificacionesScreenState extends State<CalificacionesScreen> {
 
   int paginaActual = 0; // 0 = Grupos 1 y 2, 1 = Grupos 3 y 4 + Promedios
 
-  final _calificacionesService = CalificacionesService();
+  final _calificacionesService = CalificacionesFirestoreService();
   final _cursoContext = CursoContextService();
   bool _datosInicializados = false;
 

@@ -6,8 +6,9 @@ import '../../../../core/mixins/auto_save_mixin.dart';
 import '../../../../core/utils/auto_save_controller.dart';
 import '../../../../core/widgets/auto_save_indicator.dart';
 import '../../../../core/providers/user_provider.dart';
-import '../../../../data/services/perfil_supabase_service.dart';
-import '../../../../data/services/image_upload_service.dart';
+import '../../../../data/services/firebase/firebase_auth_service.dart';
+import '../../../../data/services/firebase/image_upload_service.dart';
+import '../../../routes/routes.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -17,7 +18,7 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
-  final _perfilService = PerfilSupabaseService();
+  final _authService = FirebaseAuthService();
   final _imageUploadService = ImageUploadService();
 
   String fotoPerfil = 'https://i.pravatar.cc/150?img=3';
@@ -49,54 +50,64 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
   Future<void> _cargarDatosUsuario() async {
     setState(() => _isLoading = true);
 
-    final perfil = await _perfilService.obtenerPerfil();
+    try {
+      final perfil = await _authService.getCurrentUserProfile();
 
-    if (perfil != null && mounted) {
-      setState(() {
-        _nombreController.text = perfil['nombre'] ?? '';
-        _emailController.text = perfil['email'] ?? '';
-        _centroController.text = perfil['centro_educativo'] ?? 'Centro Educativo Eugenio M. de Hostos';
-        _regionalController.text = perfil['regional'] ?? '17';
-        _distritoController.text = perfil['distrito'] ?? '04';
-        _telefonoController.text = perfil['telefono'] ?? '';
-        _direccionController.text = perfil['direccion'] ?? '';
-        _genero = perfil['genero'];
-        fotoPerfil = perfil['foto_perfil'] ?? 'https://i.pravatar.cc/150?img=3';
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
+      if (perfil != null && mounted) {
+        setState(() {
+          _nombreController.text = perfil['nombre_completo'] ?? '';
+          _emailController.text = perfil['email'] ?? '';
+          _centroController.text = perfil['centro_educativo'] ?? 'Centro Educativo Eugenio M. de Hostos';
+          _regionalController.text = perfil['regional'] ?? '17';
+          _distritoController.text = perfil['distrito'] ?? '04';
+          _telefonoController.text = perfil['telefono'] ?? '';
+          _direccionController.text = perfil['direccion'] ?? '';
+          _genero = perfil['genero'];
+          fotoPerfil = perfil['avatar_url'] ?? 'https://i.pravatar.cc/150?img=3';
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<bool> _guardarDatos() async {
-    final result = await _perfilService.actualizarPerfil(
-      nombre: _nombreController.text.trim().isEmpty ? null : _nombreController.text.trim(),
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      centroEducativo: _centroController.text.trim().isEmpty ? null : _centroController.text.trim(),
-      regional: _regionalController.text.trim().isEmpty ? null : _regionalController.text.trim(),
-      distrito: _distritoController.text.trim().isEmpty ? null : _distritoController.text.trim(),
-      telefono: _telefonoController.text.trim().isEmpty ? null : _telefonoController.text.trim(),
-      direccion: _direccionController.text.trim().isEmpty ? null : _direccionController.text.trim(),
-      genero: _genero,
-      fotoPerfil: fotoPerfil,
-    );
-
-    // Actualizar el provider global con los nuevos datos
-    if (result != null && mounted) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.actualizarDatos(
-        nombre: _nombreController.text.trim(),
-        email: _emailController.text.trim(),
-        fotoPerfil: fotoPerfil,
-        centroEducativo: _centroController.text.trim(),
-        regional: _regionalController.text.trim(),
-        distrito: _distritoController.text.trim(),
+    try {
+      await _authService.updateProfile(
+        nombreCompleto: _nombreController.text.trim().isEmpty ? null : _nombreController.text.trim(),
+        centroEducativo: _centroController.text.trim().isEmpty ? null : _centroController.text.trim(),
+        regional: _regionalController.text.trim().isEmpty ? null : _regionalController.text.trim(),
+        distrito: _distritoController.text.trim().isEmpty ? null : _distritoController.text.trim(),
+        telefono: _telefonoController.text.trim().isEmpty ? null : _telefonoController.text.trim(),
+        direccion: _direccionController.text.trim().isEmpty ? null : _direccionController.text.trim(),
         genero: _genero,
+        avatarUrl: fotoPerfil,
       );
-    }
 
-    return result != null;
+      // Actualizar el provider global con los nuevos datos
+      if (mounted) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.actualizarDatos(
+          nombre: _nombreController.text.trim(),
+          email: _emailController.text.trim(),
+          fotoPerfil: fotoPerfil,
+          centroEducativo: _centroController.text.trim(),
+          regional: _regionalController.text.trim(),
+          distrito: _distritoController.text.trim(),
+          genero: _genero,
+        );
+      }
+
+      return true;
+    } catch (e) {
+      print('Error al guardar perfil: $e');
+      return false;
+    }
   }
 
   Future<void> _tomarFotoYSubir() async {
@@ -110,21 +121,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
     );
 
     try {
-      final userId = _imageUploadService.getCurrentUserId();
-      if (userId == null) {
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error: Usuario no autenticado'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      final imageUrl = await _imageUploadService.pickAndUploadFromCamera(userId);
+      final imageUrl = await _imageUploadService.pickAndUploadProfileFromCamera();
 
       if (mounted) {
         Navigator.pop(context); // Cerrar indicador de carga
@@ -175,21 +172,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
     );
 
     try {
-      final userId = _imageUploadService.getCurrentUserId();
-      if (userId == null) {
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error: Usuario no autenticado'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      final imageUrl = await _imageUploadService.pickAndUploadFromGallery(userId);
+      final imageUrl = await _imageUploadService.pickAndUploadProfileFromGallery();
 
       if (mounted) {
         Navigator.pop(context); // Cerrar indicador de carga
@@ -312,12 +295,12 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
               ),
               const SizedBox(height: 24),
               // Mostrar opciones de cámara y galería solo en plataformas soportadas
-              if (_imageUploadService.isPlatformSupported) ...[
+              if (!kIsWeb && !Platform.isLinux) ...[
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.camera_alt, color: Colors.blue),
@@ -332,7 +315,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
+                      color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.photo_library, color: Colors.green),
@@ -351,9 +334,9 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
                     ),
                     child: const Row(
                       children: [
@@ -376,7 +359,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
+                    color: Colors.orange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.link, color: Colors.orange),
@@ -392,7 +375,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.1),
+                      color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.delete, color: Colors.red),
@@ -469,13 +452,13 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.4),
+                            color: Colors.blue.withOpacity(0.4),
                             blurRadius: 20,
                             spreadRadius: 5,
                             offset: const Offset(0, 8),
                           ),
                           BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.2),
+                            color: Colors.blue.withOpacity(0.2),
                             blurRadius: 30,
                             spreadRadius: 10,
                             offset: const Offset(0, 4),
@@ -507,7 +490,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withValues(alpha: 0.5),
+                                color: Colors.blue.withOpacity(0.5),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -529,6 +512,107 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                 ),
               ),
               const SizedBox(height: 32),
+
+              // Métodos de Acceso / Seguridad
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.blue.withOpacity(0.2), width: 2),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pushNamed(context, Routes.authProviders);
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Colors.blue, Colors.blueAccent],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.security,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Métodos de Acceso',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Gestiona tus métodos de inicio de sesión',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Sección de información personal
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: const Text(
+                  'INFORMACIÓN PERSONAL',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Formulario de datos
               _buildTextField(
@@ -591,7 +675,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: Colors.black.withOpacity(0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -604,11 +688,11 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                     prefixIcon: const Icon(Icons.person_outline, color: Colors.blue),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 2),
+                      borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 2),
+                      borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -634,7 +718,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
@@ -673,7 +757,7 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -689,11 +773,11 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
           prefixIcon: Icon(icon, color: Colors.blue),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 2),
+            borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 2),
+            borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

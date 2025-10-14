@@ -1,0 +1,41 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Regla general: solo usuarios autenticados pueden acceder a sus propios archivos
+
+    // Fotos de perfil de usuarios
+    match /users/{userId}/profile/{allPaths=**} {
+      // Permitir lectura pública de fotos de perfil
+      allow read: if true;
+      // Solo el usuario puede escribir/modificar su propia foto de perfil
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Validar que los archivos sean imágenes y no excedan 5MB
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Fotos generales de usuarios
+    match /users/{userId}/photos/{allPaths=**} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Validar que los archivos sean imágenes y no excedan 10MB
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Evidencias de usuarios (carpetas con fotos)
+    match /users/{userId}/evidencias/{carpetaId}/{filename} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Validar que los archivos sean imágenes y no excedan 10MB
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Denegar acceso a todo lo demás
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

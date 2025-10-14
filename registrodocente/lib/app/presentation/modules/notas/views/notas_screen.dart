@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../data/services/notas_service.dart';
+import '../../../../data/services/firebase/notas_firestore_service.dart';
 
 class NotasScreen extends StatefulWidget {
   const NotasScreen({super.key});
@@ -9,7 +9,7 @@ class NotasScreen extends StatefulWidget {
 }
 
 class _NotasScreenState extends State<NotasScreen> {
-  final _notasService = NotasService();
+  final _notasService = NotasFirestoreService();
   List<Map<String, dynamic>> _notas = [];
   bool _isLoading = true;
 
@@ -156,7 +156,7 @@ class _NotasScreenState extends State<NotasScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: color.withValues(alpha: 0.3),
+                          color: color.withOpacity(0.3),
                           width: 2,
                         ),
                       ),
@@ -173,7 +173,7 @@ class _NotasScreenState extends State<NotasScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.1),
+                                      color: color.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -277,7 +277,7 @@ class EditorNotaScreen extends StatefulWidget {
 class _EditorNotaScreenState extends State<EditorNotaScreen> {
   final _tituloController = TextEditingController();
   final _contenidoController = TextEditingController();
-  final _notasService = NotasService();
+  final _notasService = NotasFirestoreService();
   bool _isSaving = false;
 
   @override

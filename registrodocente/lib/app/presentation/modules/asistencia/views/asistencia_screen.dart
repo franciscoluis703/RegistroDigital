@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import '../../../../data/services/asistencia_service.dart';
-import '../../../../data/services/estudiantes_service.dart';
+import '../../../../data/services/firebase/asistencia_firestore_service.dart';
 import '../../../widgets/estudiante_nombre_widget.dart';
 
 class AsistenciaScreen extends StatefulWidget {
@@ -14,10 +13,8 @@ class AsistenciaScreen extends StatefulWidget {
 }
 
 class _AsistenciaScreenState extends State<AsistenciaScreen> {
-  final _asistenciaService = AsistenciaService();
-  final _estudiantesService = EstudiantesService();
+  final _asistenciaService = AsistenciaFirestoreService();
   int mesActualIndex = 0;
-  final List<String> _nombresEstudiantes = [];
 
   void _crear10Meses(BuildContext context, String curso, String seccion) {
     String mesSeleccionado = 'Agosto';
@@ -46,7 +43,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                   DropdownButton<String>(
                     value: mesSeleccionado,
                     isExpanded: true,
-                    items: AsistenciaService.mesesDelAnio
+                    items: AsistenciaFirestoreService.mesesDelAnio
                         .map((mes) =>
                             DropdownMenuItem(value: mes, child: Text(mes)))
                         .toList(),
@@ -82,7 +79,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                         ),
                         const SizedBox(height: 8),
                         ...() {
-                          int mesIndex = AsistenciaService.mesesDelAnio.indexOf(mesSeleccionado);
+                          int mesIndex = AsistenciaFirestoreService.mesesDelAnio.indexOf(mesSeleccionado);
                           List<Widget> mesesWidgets = [];
                           for (int i = 0; i < 10; i++) {
                             int indexActual = (mesIndex + i) % 12;
@@ -90,7 +87,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 8, top: 2),
                                 child: Text(
-                                  '${i + 1}. ${AsistenciaService.mesesDelAnio[indexActual]}',
+                                  '${i + 1}. ${AsistenciaFirestoreService.mesesDelAnio[indexActual]}',
                                   style: const TextStyle(fontSize: 11),
                                 ),
                               ),
@@ -338,7 +335,7 @@ class RegistroAsistenciaMateria extends StatefulWidget {
 class _RegistroAsistenciaState extends State<RegistroAsistenciaMateria> {
   late TextEditingController docenteController;
   late TextEditingController mesController;
-  final _asistenciaService = AsistenciaService();
+  final _asistenciaService = AsistenciaFirestoreService();
 
   // 40 estudiantes (días) x 22 columnas (1-20, 21, T, %)
   List<List<String>> asistencia =

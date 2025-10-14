@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../data/services/curso_context_service.dart';
-import '../../../../../data/services/estudiantes_supabase_service.dart';
+import '../../../../../data/services/firebase/estudiantes_firestore_service.dart';
 import '../../../../widgets/estudiante_nombre_widget.dart';
 
 class EmergencyDataScreen extends StatefulWidget {
@@ -12,7 +12,7 @@ class EmergencyDataScreen extends StatefulWidget {
 
 class _EmergencyDataScreenState extends State<EmergencyDataScreen> {
   final _cursoContext = CursoContextService();
-  final _estudiantesService = EstudiantesSupabaseService();
+  final _estudiantesService = EstudiantesFirestoreService();
 
   // Lista de 40 filas con TextEditingControllers
   List<Map<String, TextEditingController>> emergencia = List.generate(

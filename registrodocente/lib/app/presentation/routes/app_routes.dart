@@ -1,8 +1,6 @@
-
-
 import 'package:flutter/material.dart';
 import '../modules/splash/views/splash_view.dart';
-import '../modules/auth/views/login_screen.dart';
+// import '../modules/auth/views/login_screen.dart'; // ❌ ELIMINADO - Duplicado de sign_in_view
 import '../modules/sign_in/views/sign_in_view.dart';
 import '../modules/sign_up/views/sign_up_view.dart';
 import '../modules/forgot_password/views/forgot_password_view.dart';
@@ -24,33 +22,38 @@ import '../modules/promocion_grado/views/promocion_grado_screen.dart';
 import '../modules/calendario_escolar/views/calendario_escolar_screen.dart';
 import '../modules/horario_clase/views/horario_clase_screen.dart';
 import '../modules/notas/views/notas_screen.dart';
+import '../modules/evidencias/views/evidencias_screen.dart';
+import '../modules/auth_providers/views/auth_providers_screen.dart';
 import 'routes.dart';
 
 
 Map<String, Widget Function(BuildContext)> get appRoutes {
   return {
+    // ✅ PANTALLAS MIGRADAS A FIREBASE (13/13)
     Routes.splash: (context) => const SplashView(),
-    Routes.login: (context) => const LoginScreen(),  // Nueva ruta con Supabase
+    // Routes.login: (context) => const LoginScreen(),  // ❌ ELIMINADO - Duplicado
     Routes.signIn: (context) => const SignInView(),
     Routes.signUp: (context) => const SignUpView(),
     Routes.forgotPassword: (context) => const ForgotPasswordView(),
     Routes.home: (context) => const HomeScreen(),
     Routes.generalInfo: (context) => const GeneralInfoScreen(),
-    Routes.centroEducativo: (context) => const CentroEducativoScreen(),
-    Routes.generalStudent: (context) => const GeneralStudentScreen(),
+    Routes.centroEducativo: (context) => const CentroEducativoScreen(), // ✅ MIGRADO
+    Routes.generalStudent: (context) => const GeneralStudentScreen(), // ✅ MIGRADO
     Routes.condicionInicial: (context) => const CondicionInicialScreen(),
     Routes.emergencyData: (context) => const EmergencyDataScreen(),
     Routes.parentesco: (context) => const ParentescoScreen(),
     Routes.cursos: (context) => const CursosScreen(),
     Routes.cursoDetalle: (context) => const CursoDetalleScreen(),
     Routes.perfil: (context) => const PerfilScreen(),
-    Routes.asistencia: (context) => const AsistenciaScreen(),
+    Routes.asistencia: (context) => const AsistenciaScreen(), // ✅ MIGRADO
     Routes.asistenciaEvaluaciones: (context) => const AsistenciaEvaluacionesScreen(),
     Routes.asistenciasMenu: (context) => const AsistenciasMenuScreen(),
-    Routes.calificaciones: (context) => const CalificacionesScreen(),
-    Routes.promocionGrado: (context) => const PromocionGradoScreen(),
+    Routes.calificaciones: (context) => const CalificacionesScreen(), // ✅ MIGRADO
+    Routes.promocionGrado: (context) => const PromocionGradoScreen(), // ✅ MIGRADO
     Routes.calendarioEscolar: (context) => const CalendarioEscolarScreen(),
     Routes.horarioClase: (context) => const HorarioClaseScreen(),
-    Routes.notas: (context) => const NotasScreen(),
+    Routes.notas: (context) => const NotasScreen(), // ✅ MIGRADO
+    Routes.evidencias: (context) => const EvidenciasScreen(), // ✅ MIGRADO
+    Routes.authProviders: (context) => const AuthProvidersScreen(), // Gestión de proveedores de acceso
   };
 }

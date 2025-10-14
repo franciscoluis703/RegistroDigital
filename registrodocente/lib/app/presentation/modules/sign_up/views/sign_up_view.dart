@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../../routes/routes.dart';
-import '../../../../data/services/supabase_service.dart';
+import '../../../../data/services/firebase/firebase_auth_service.dart';
+import '../../../../core/providers/user_provider.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -16,6 +17,7 @@ class _SignUpViewState extends State<SignUpView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = FirebaseAuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -35,43 +37,38 @@ class _SignUpViewState extends State<SignUpView> {
     setState(() => _isLoading = true);
 
     try {
-      final supabase = SupabaseService.instance;
-
-      final response = await supabase.client!.auth.signUp(
+      // Registrar usuario con Firebase
+      final result = await _authService.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        data: {
-          'nombre': _nameController.text.trim(),
-        },
+        nombreCompleto: _nameController.text.trim(),
       );
 
-      if (response.user == null) {
-        throw Exception('Error al crear la cuenta');
+      if (!result['success']) {
+        throw Exception(result['message']);
       }
 
-      // Guardar datos del usuario en SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('usuario_nombre', _nameController.text.trim());
-      await prefs.setString('usuario_email', _emailController.text.trim());
-
       if (mounted) {
-        // Mostrar mensaje de confirmación de email
+        // Cargar datos del usuario en el provider
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.cargarDatosUsuario();
+
+        // Redirigir a home
+        Navigator.of(context).pushReplacementNamed(Routes.home);
+
+        // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('¡Cuenta creada! Por favor verifica tu correo electrónico.'),
+            content: Text('¡Cuenta creada exitosamente! Bienvenido.'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 5),
           ),
         );
-
-        // Ir a login
-        Navigator.of(context).pushReplacementNamed(Routes.signIn);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -111,13 +108,13 @@ class _SignUpViewState extends State<SignUpView> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.secondary.withValues(alpha: 0.5),
+                          color: colorScheme.secondary.withOpacity(0.5),
                           blurRadius: 25,
                           spreadRadius: 5,
                           offset: const Offset(0, 10),
                         ),
                         BoxShadow(
-                          color: colorScheme.tertiary.withValues(alpha: 0.3),
+                          color: colorScheme.tertiary.withOpacity(0.3),
                           blurRadius: 15,
                           spreadRadius: 2,
                           offset: const Offset(0, 5),
@@ -146,7 +143,7 @@ class _SignUpViewState extends State<SignUpView> {
                   Text(
                     'Únete a nuestra comunidad educativa',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -158,7 +155,7 @@ class _SignUpViewState extends State<SignUpView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -175,11 +172,11 @@ class _SignUpViewState extends State<SignUpView> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -205,7 +202,7 @@ class _SignUpViewState extends State<SignUpView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -221,11 +218,11 @@ class _SignUpViewState extends State<SignUpView> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -251,7 +248,7 @@ class _SignUpViewState extends State<SignUpView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -267,11 +264,11 @@ class _SignUpViewState extends State<SignUpView> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -280,7 +277,7 @@ class _SignUpViewState extends State<SignUpView> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                           onPressed: () {
                             setState(() => _obscurePassword = !_obscurePassword);
@@ -306,7 +303,7 @@ class _SignUpViewState extends State<SignUpView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -322,11 +319,11 @@ class _SignUpViewState extends State<SignUpView> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.3), width: 2),
+                          borderSide: BorderSide(color: colorScheme.secondary.withOpacity(0.3), width: 2),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -335,7 +332,7 @@ class _SignUpViewState extends State<SignUpView> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                           onPressed: () {
                             setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
@@ -367,7 +364,7 @@ class _SignUpViewState extends State<SignUpView> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.secondary.withValues(alpha: 0.3),
+                          color: colorScheme.secondary.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -405,7 +402,7 @@ class _SignUpViewState extends State<SignUpView> {
                       Text(
                         '¿Ya tienes cuenta? ',
                         style: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                       TextButton(

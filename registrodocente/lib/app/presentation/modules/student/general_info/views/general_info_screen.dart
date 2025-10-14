@@ -177,7 +177,7 @@ class _MenuCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
+                color: color.withOpacity(0.2),
               ),
               child: Icon(
                 icon,

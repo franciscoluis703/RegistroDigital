@@ -45,8 +45,8 @@ class EducationalCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isActive
-                  ? AppColors.secondary.withValues(alpha: 0.2)
-                  : AppColors.textPrimary.withValues(alpha: 0.08),
+                  ? AppColors.secondary.withOpacity(0.2)
+                  : AppColors.textPrimary.withOpacity(0.08),
               blurRadius: isActive ? 8 : 4,
               offset: const Offset(0, 2),
             ),
@@ -58,7 +58,7 @@ class EducationalCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
+                color: color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

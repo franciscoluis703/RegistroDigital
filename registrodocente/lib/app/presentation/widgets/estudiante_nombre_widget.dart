@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/services/estudiantes_service.dart';
+// import '../../data/services/firebase/estudiantes_firestore_service.dart';
 
 class EstudianteNombreWidget extends StatelessWidget {
   final int numero;
@@ -7,6 +7,7 @@ class EstudianteNombreWidget extends StatelessWidget {
   final TextAlign? textAlign;
   final Color? backgroundColor;
   final BoxDecoration? decoration;
+  final String? cursoId; // Opcional - para futuras mejoras
 
   const EstudianteNombreWidget({
     super.key,
@@ -15,17 +16,24 @@ class EstudianteNombreWidget extends StatelessWidget {
     this.textAlign,
     this.backgroundColor,
     this.decoration,
+    this.cursoId,
   });
 
   Future<void> _mostrarNombreEstudiante(BuildContext context) async {
-    final nombres = await EstudiantesService().obtenerNombresEstudiantes();
+    // Nota: La funcionalidad de mostrar nombres requiere cursoId
+    // Por ahora solo mostramos el número
+    // TODO: Implementar obtención de nombre desde EstudiantesFirestoreService
 
     if (!context.mounted) return;
 
-    String nombre = 'Sin nombre registrado';
-    if (numero <= nombres.length && nombres[numero - 1].isNotEmpty) {
-      nombre = nombres[numero - 1];
-    }
+    String nombre = 'Estudiante #$numero';
+    // Si en el futuro se proporciona cursoId:
+    // if (cursoId != null) {
+    //   final nombres = await EstudiantesFirestoreService().obtenerNombresEstudiantes(cursoId!);
+    //   if (numero <= nombres.length && nombres[numero - 1].isNotEmpty) {
+    //     nombre = nombres[numero - 1];
+    //   }
+    // }
 
     showDialog(
       context: context,
@@ -35,7 +43,7 @@ class EstudianteNombreWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.2),
+                color: Colors.grey.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -56,7 +64,7 @@ class EstudianteNombreWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Nombre:',
+              'Número:',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../data/services/curso_context_service.dart';
-import '../../../../../data/services/estudiantes_supabase_service.dart';
+import '../../../../../data/services/firebase/estudiantes_firestore_service.dart';
 
 class CondicionInicialScreen extends StatefulWidget {
   const CondicionInicialScreen({super.key});
@@ -12,7 +12,7 @@ class CondicionInicialScreen extends StatefulWidget {
 
 class _CondicionInicialScreenState extends State<CondicionInicialScreen> {
   final _cursoContext = CursoContextService();
-  final _estudiantesService = EstudiantesSupabaseService();
+  final _estudiantesService = EstudiantesFirestoreService();
 
   // Lista de 40 filas con controllers
   List<Map<String, dynamic>> estudiantes = List.generate(

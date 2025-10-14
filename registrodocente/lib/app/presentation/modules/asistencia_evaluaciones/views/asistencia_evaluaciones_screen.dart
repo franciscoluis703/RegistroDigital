@@ -6,7 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../widgets/estudiante_nombre_widget.dart';
 import '../../../../data/services/curso_context_service.dart';
-import '../../../../data/services/calificaciones_supabase_service.dart';
+import '../../../../data/services/firebase/calificaciones_firestore_service.dart';
 
 class AsistenciaEvaluacionesScreen extends StatefulWidget {
   const AsistenciaEvaluacionesScreen({super.key});
@@ -18,7 +18,7 @@ class AsistenciaEvaluacionesScreen extends StatefulWidget {
 class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScreen> {
   final int totalEstudiantes = 40;
   final CursoContextService _cursoContext = CursoContextService();
-  final CalificacionesSupabaseService _supabaseService = CalificacionesSupabaseService();
+  final CalificacionesFirestoreService _calificacionesService = CalificacionesFirestoreService();
   String _asignatura = 'Asignatura';
 
   // Controladores para nombre y grado
@@ -45,8 +45,8 @@ class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScr
   Future<void> _cargarDatos() async {
     final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
 
-    // Cargar desde Supabase
-    final datos = await _supabaseService.obtenerEvaluacionesDias(cursoId);
+    // Cargar desde Firebase
+    final datos = await _calificacionesService.obtenerEvaluacionesDias(cursoId);
 
     if (datos != null && mounted) {
       // Cargar nombre y grado
@@ -278,8 +278,8 @@ class _AsistenciaEvaluacionesScreenState extends State<AsistenciaEvaluacionesScr
   Future<void> _guardarDatos() async {
     final cursoId = await _cursoContext.obtenerCursoActual() ?? 'default';
 
-    // Guardar en Supabase
-    await _supabaseService.guardarEvaluacionesDias(
+    // Guardar en Firebase
+    await _calificacionesService.guardarEvaluacionesDias(
       cursoId: cursoId,
       nombreDocente: nombreController.text,
       grado: gradoController.text,

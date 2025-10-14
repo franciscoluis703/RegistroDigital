@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../../widgets/estudiante_nombre_widget.dart';
-import '../../../../data/services/horarios_supabase_service.dart';
+import '../../../../data/services/firebase/horarios_firestore_service.dart';
 
 class HorarioClaseScreen extends StatefulWidget {
   const HorarioClaseScreen({super.key});
@@ -12,7 +12,7 @@ class HorarioClaseScreen extends StatefulWidget {
 
 class _HorarioClaseScreenState extends State<HorarioClaseScreen> {
   final List<HorarioPeriodo> _periodos = [];
-  final _horariosService = HorariosSupabaseService();
+  final _horariosService = HorariosFirestoreService();
   bool _isLoading = true;
 
   @override
@@ -308,7 +308,7 @@ class _HorarioClaseScreenState extends State<HorarioClaseScreen> {
                             decoration: BoxDecoration(
                               color: periodo.esRecreo || periodo.esAlmuerzo
                                   ? Colors.orange[100]
-                                  : colorCelda?.withValues(alpha: 0.3) ?? Colors.white,
+                                  : colorCelda?.withOpacity(0.3) ?? Colors.white,
                               border: Border(
                                 right: BorderSide(color: Colors.grey[300]!),
                                 bottom: BorderSide(color: Colors.grey[300]!),
@@ -478,7 +478,7 @@ class _HorarioClaseScreenState extends State<HorarioClaseScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorSeleccionado!.withValues(alpha: 0.3),
+                        color: colorSeleccionado!.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: colorSeleccionado!),
                       ),
@@ -589,7 +589,7 @@ class _HorarioClaseScreenState extends State<HorarioClaseScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withValues(alpha: 0.5),
+                    color: color.withOpacity(0.5),
                     blurRadius: 8,
                     spreadRadius: 2,
                   ),

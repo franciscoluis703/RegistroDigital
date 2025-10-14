@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:provider/provider.dart';
 import '../../../../data/services/curso_context_service.dart';
+import '../../../../data/services/firebase/cursos_firestore_service.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/avatar_genero_widget.dart';
 import '../../../themes/app_colors.dart';
 
@@ -14,6 +15,7 @@ class CursosScreen extends StatefulWidget {
 
 class _CursosScreenState extends State<CursosScreen> {
   final CursoContextService _cursoContext = CursoContextService();
+  final CursosFirestoreService _cursosService = CursosFirestoreService();
 
   // Lista de cursos
   List<String> cursos = [];
@@ -51,10 +53,10 @@ class _CursosScreenState extends State<CursosScreen> {
   }
 
   Future<void> _cargarDatosUsuario() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nombre = prefs.getString('usuario_nombre') ?? 'Usuario';
+    if (!mounted) return;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     setState(() {
-      _nombreUsuario = nombre;
+      _nombreUsuario = userProvider.nombre.isNotEmpty ? userProvider.nombre : 'Usuario';
     });
   }
 
@@ -112,54 +114,41 @@ class _CursosScreenState extends State<CursosScreen> {
     }
   }
 
-  // Cargar datos desde SharedPreferences
+  // Cargar datos desde Firebase
   Future<void> _cargarDatos() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      // Cargar cursos desde Firebase
+      final cursosFirebase = await _cursosService.obtenerCursos();
 
-    // Cargar cursos
-    final cursosJson = prefs.getString('cursos');
-    if (cursosJson != null) {
-      cursos = List<String>.from(json.decode(cursosJson));
-    } else {
-      // Si no hay datos guardados, inicializar con lista vacía
-      cursos = [];
-    }
+      if (cursosFirebase.isNotEmpty) {
+        // Convertir datos de Firebase al formato antiguo
+        cursos = cursosFirebase.map((curso) {
+          final nombre = curso.nombre;
+          final asignatura = curso.asignatura;
+          return '$nombre - $asignatura';
+        }).toList();
 
-    // Cargar secciones
-    final seccionesJson = prefs.getString('secciones');
-    if (seccionesJson != null) {
-      final seccionesData = json.decode(seccionesJson) as Map<String, dynamic>;
-      secciones = seccionesData.map((key, value) =>
-        MapEntry(key, List<String>.from(value))
-      );
-    }
+        // Construir secciones desde Firebase
+        for (var curso in cursosFirebase) {
+          final nombreCompleto = '${curso.nombre} - ${curso.asignatura}';
+          secciones[nombreCompleto] = curso.secciones;
 
-    // Cargar papelera de cursos
-    final cursosEliminadosJson = prefs.getString('cursosEliminados');
-    if (cursosEliminadosJson != null) {
-      cursosEliminados = List<Map<String, dynamic>>.from(
-        (json.decode(cursosEliminadosJson) as List).map((item) =>
-          Map<String, dynamic>.from(item)
-        )
-      );
-    }
+          // Cargar estado oculto
+          cursosOcultos[nombreCompleto] = curso.oculto;
+        }
 
-    // Cargar papelera de secciones
-    final seccionesEliminadasJson = prefs.getString('seccionesEliminadas');
-    if (seccionesEliminadasJson != null) {
-      final seccionesEliminadasData = json.decode(seccionesEliminadasJson) as Map<String, dynamic>;
-      seccionesEliminadas = seccionesEliminadasData.map((key, value) =>
-        MapEntry(key, List<String>.from(value))
-      );
-    }
+        print('✅ Cursos cargados desde Firebase: ${cursos.length}');
+      } else {
+        // Si no hay cursos, crear curso por defecto
+        await _crearCursoPorDefecto();
+      }
+    } catch (e) {
+      print('❌ Error al cargar desde Firebase: $e');
 
-    // Cargar cursos ocultos
-    final cursosOcultosJson = prefs.getString('cursosOcultos');
-    if (cursosOcultosJson != null) {
-      final cursosOcultosData = json.decode(cursosOcultosJson) as Map<String, dynamic>;
-      cursosOcultos = cursosOcultosData.map((key, value) =>
-        MapEntry(key, value as bool)
-      );
+      // Si no hay cursos, crear curso por defecto
+      if (cursos.isEmpty) {
+        await _crearCursoPorDefecto();
+      }
     }
 
     setState(() {
@@ -167,24 +156,183 @@ class _CursosScreenState extends State<CursosScreen> {
     });
   }
 
-  // Guardar datos en SharedPreferences
+  // Crear curso por defecto cuando no hay cursos
+  Future<void> _crearCursoPorDefecto() async {
+    print('📚 Creando curso por defecto...');
+
+    final cursoDefecto = 'Mi Curso - Mi Asignatura';
+
+    setState(() {
+      cursos.add(cursoDefecto);
+      secciones[cursoDefecto] = ['A'];
+      cursosOcultos[cursoDefecto] = false;
+    });
+
+    // Guardar el curso por defecto
+    await _guardarDatos();
+
+    print('✅ Curso por defecto creado: $cursoDefecto');
+
+    // Mostrar mensaje de bienvenida después de que se haya renderizado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _mostrarMensajeBienvenida();
+      }
+    });
+  }
+
+  // Mostrar mensaje de bienvenida para el curso por defecto
+  void _mostrarMensajeBienvenida() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.celebration, color: Colors.blue, size: 28),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '¡Bienvenido!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Hemos creado un curso de ejemplo para ti.',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '¿Qué puedes hacer?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 12),
+              _InstruccionItem(
+                icon: Icons.edit,
+                texto: 'Pulsa el botón de opciones (⋮) y selecciona "Editar nombre" para cambiar el nombre del curso.',
+              ),
+              SizedBox(height: 8),
+              _InstruccionItem(
+                icon: Icons.add_circle,
+                texto: 'Usa el botón (+) en la parte superior para crear más cursos.',
+              ),
+              SizedBox(height: 8),
+              _InstruccionItem(
+                icon: Icons.class_,
+                texto: 'Pulsa sobre el curso para abrirlo y gestionar sus secciones.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Abrir directamente el diálogo de edición
+              _editarNombreCurso(cursos[0], 0);
+            },
+            child: const Text('Cambiar nombre ahora'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Guardar datos en Firebase
   Future<void> _guardarDatos() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      print('🔄 Iniciando sincronización con Firebase...');
 
-    // Guardar cursos
-    await prefs.setString('cursos', json.encode(cursos));
+      // Obtener cursos existentes en Firebase
+      final cursosExistentes = await _cursosService.obtenerCursos();
+      final cursosExistentesMap = <String, String>{};
 
-    // Guardar secciones
-    await prefs.setString('secciones', json.encode(secciones));
+      for (var c in cursosExistentes) {
+        final nombreCompleto = '${c.nombre} - ${c.asignatura}';
+        cursosExistentesMap[nombreCompleto] = c.id;
+      }
 
-    // Guardar papelera de cursos
-    await prefs.setString('cursosEliminados', json.encode(cursosEliminados));
+      // Set de cursos actuales (para detectar eliminaciones)
+      final cursosActualesSet = <String>{};
 
-    // Guardar papelera de secciones
-    await prefs.setString('seccionesEliminadas', json.encode(seccionesEliminadas));
+      // Crear/actualizar cada curso en Firebase
+      for (var i = 0; i < cursos.length; i++) {
+        final nombreCompleto = cursos[i];
+        cursosActualesSet.add(nombreCompleto);
 
-    // Guardar cursos ocultos
-    await prefs.setString('cursosOcultos', json.encode(cursosOcultos));
+        final partes = nombreCompleto.split(' - ');
+        if (partes.length >= 2) {
+          final nombre = partes[0];
+          final asignatura = partes.sublist(1).join(' - ');
+          final seccionesCurso = secciones[nombreCompleto] ?? ['A'];
+          final oculto = cursosOcultos[nombreCompleto] ?? false;
+
+          if (cursosExistentesMap.containsKey(nombreCompleto)) {
+            // Actualizar curso existente
+            final cursoId = cursosExistentesMap[nombreCompleto];
+            final success = await _cursosService.actualizarCurso(cursoId!, {
+              'nombre': nombre,
+              'asignatura': asignatura,
+              'secciones': seccionesCurso,
+              'oculto': oculto,
+            });
+            if (success) {
+              print('  ✅ Curso actualizado: $nombreCompleto');
+            } else {
+              print('  ⚠️ Error al actualizar curso: $nombreCompleto');
+            }
+          } else {
+            // Crear nuevo curso
+            final result = await _cursosService.crearCurso(
+              nombre: nombre,
+              asignatura: asignatura,
+              secciones: seccionesCurso,
+              oculto: oculto,
+            );
+            if (result != null) {
+              print('  ✅ Curso creado: $nombreCompleto');
+            } else {
+              print('  ⚠️ Error al crear curso: $nombreCompleto');
+            }
+          }
+        }
+      }
+
+      // Eliminar cursos que ya no existen localmente
+      for (var nombreCompleto in cursosExistentesMap.keys) {
+        if (!cursosActualesSet.contains(nombreCompleto)) {
+          final cursoId = cursosExistentesMap[nombreCompleto]!;
+          final success = await _cursosService.eliminarCurso(cursoId);
+          if (success) {
+            print('  🗑️ Curso eliminado de Firebase: $nombreCompleto');
+          } else {
+            print('  ⚠️ Error al eliminar curso: $nombreCompleto');
+          }
+        }
+      }
+
+      print('✅ Sincronización con Firebase completada');
+      print('   Total cursos: ${cursos.length}');
+    } catch (e) {
+      print('❌ Error al sincronizar con Firebase: $e');
+    }
   }
 
 
@@ -279,13 +427,20 @@ class _CursosScreenState extends State<CursosScreen> {
                 // Formato: "Tercero A - Lengua Española"
                 final nombreCompleto = '$nombre - $asignatura';
 
+                print('📝 Usuario agregando curso: $nombreCompleto');
+
                 setState(() {
                   // Agregar al inicio de la lista
                   cursos.insert(0, nombreCompleto);
                   secciones[nombreCompleto] = ['A'];
                 });
 
+                print('   Lista actualizada. Total cursos: ${cursos.length}');
+                print('   Iniciando guardado...');
+
                 await _guardarDatos();
+
+                print('   ✅ Guardado completado');
 
                 nombreController.dispose();
                 asignaturaController.dispose();
@@ -318,41 +473,135 @@ class _CursosScreenState extends State<CursosScreen> {
   }
 
   void _editarNombreCurso(String cursoActual, int index) {
-    final controller = TextEditingController(text: cursoActual);
+    // Separar nombre y asignatura del curso actual
+    final partes = cursoActual.split(' - ');
+    final nombreActual = partes.isNotEmpty ? partes[0] : '';
+    final asignaturaActual = partes.length > 1 ? partes.sublist(1).join(' - ') : '';
+
+    final nombreController = TextEditingController(text: nombreActual);
+    final asignaturaController = TextEditingController(text: asignaturaActual);
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Editar Nombre del Curso'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Nombre del curso',
+          title: Row(
+            children: const [
+              Icon(Icons.edit, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Editar Curso'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Personaliza tu curso:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nombreController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del Curso',
+                    hintText: 'Ej: Tercero A',
+                    prefixIcon: Icon(Icons.school),
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                  autofocus: true,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: asignaturaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Asignatura',
+                    hintText: 'Ej: Lengua Española',
+                    prefixIcon: Icon(Icons.book),
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                nombreController.dispose();
+                asignaturaController.dispose();
+                Navigator.pop(context);
+              },
               child: const Text('Cancelar'),
             ),
-            TextButton(
+            ElevatedButton.icon(
+              icon: const Icon(Icons.check),
               onPressed: () async {
-                final nuevoNombre = controller.text.trim();
-                if (nuevoNombre.isNotEmpty && nuevoNombre != cursoActual) {
+                final nuevoNombre = nombreController.text.trim();
+                final nuevaAsignatura = asignaturaController.text.trim();
+
+                if (nuevoNombre.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Por favor ingresa el nombre del curso'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+
+                if (nuevaAsignatura.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Por favor ingresa la asignatura'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+
+                final nombreCompleto = '$nuevoNombre - $nuevaAsignatura';
+
+                if (nombreCompleto != cursoActual) {
                   setState(() {
                     // Actualizar nombre en la lista
-                    cursos[index] = nuevoNombre;
+                    cursos[index] = nombreCompleto;
                     // Actualizar secciones con el nuevo nombre
-                    secciones[nuevoNombre] = secciones[cursoActual]!;
+                    secciones[nombreCompleto] = secciones[cursoActual]!;
                     secciones.remove(cursoActual);
+                    // Actualizar estado oculto si existe
+                    if (cursosOcultos.containsKey(cursoActual)) {
+                      cursosOcultos[nombreCompleto] = cursosOcultos[cursoActual]!;
+                      cursosOcultos.remove(cursoActual);
+                    }
                   });
                   await _guardarDatos();
+
+                  nombreController.dispose();
+                  asignaturaController.dispose();
+
                   if (context.mounted) {
                     Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Curso actualizado: $nombreCompleto'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   }
+                } else {
+                  nombreController.dispose();
+                  asignaturaController.dispose();
+                  Navigator.pop(context);
                 }
               },
-              child: const Text('Guardar'),
+              label: const Text('Guardar'),
             ),
           ],
         );
@@ -411,7 +660,7 @@ class _CursosScreenState extends State<CursosScreen> {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
+                        color: Colors.blue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.class_, color: Colors.blue),
@@ -491,7 +740,7 @@ class _CursosScreenState extends State<CursosScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.add, color: Colors.green),
@@ -513,8 +762,8 @@ class _CursosScreenState extends State<CursosScreen> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: (cursosOcultos[curso] ?? false)
-                        ? Colors.blue.withValues(alpha: 0.1)
-                        : Colors.grey.withValues(alpha: 0.1),
+                        ? Colors.blue.withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -586,7 +835,7 @@ class _CursosScreenState extends State<CursosScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
+                      color: Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.delete_outline, color: Colors.orange),
@@ -660,7 +909,7 @@ class _CursosScreenState extends State<CursosScreen> {
                                   leading: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.1),
+                                      color: Colors.orange.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(Icons.school, color: Colors.orange),
@@ -765,7 +1014,7 @@ class _CursosScreenState extends State<CursosScreen> {
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Colors.purple.withValues(alpha: 0.1),
+                                        color: Colors.purple.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Icon(Icons.class_, color: Colors.purple),
@@ -1103,7 +1352,7 @@ class _CursosScreenState extends State<CursosScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: _getColorForIndex(index).withValues(alpha: 0.2),
+                                      color: _getColorForIndex(index).withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -1221,6 +1470,48 @@ class _CursosScreenState extends State<CursosScreen> {
   }
 }
 
+// Widget para mostrar instrucciones en el diálogo de bienvenida
+class _InstruccionItem extends StatelessWidget {
+  final IconData icon;
+  final String texto;
+
+  const _InstruccionItem({
+    required this.icon,
+    required this.texto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            icon,
+            color: Colors.blue,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            texto,
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CursoCard extends StatelessWidget {
   final String curso;
   final int numSecciones;
@@ -1264,10 +1555,10 @@ class _CursoCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isActive
-                  ? AppColors.secondary.withValues(alpha: 0.2)
+                  ? AppColors.secondary.withOpacity(0.2)
                   : isHidden
-                      ? AppColors.textPrimary.withValues(alpha: 0.04)
-                      : AppColors.textPrimary.withValues(alpha: 0.08),
+                      ? AppColors.textPrimary.withOpacity(0.04)
+                      : AppColors.textPrimary.withOpacity(0.08),
               blurRadius: isActive ? 8 : 4,
               offset: const Offset(0, 2),
             ),
@@ -1278,7 +1569,7 @@ class _CursoCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
+                color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../data/services/centro_educativo_service.dart';
+import '../../../../../data/services/firebase/centro_educativo_firestore_service.dart';
 
 class CentroEducativoScreen extends StatefulWidget {
   const CentroEducativoScreen({super.key});
@@ -10,7 +10,7 @@ class CentroEducativoScreen extends StatefulWidget {
 
 class _CentroEducativoScreenState extends State<CentroEducativoScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _centroService = CentroEducativoService();
+  final _centroService = CentroEducativoFirestoreService();
   bool _isLoading = true;
 
   // Controllers básicos

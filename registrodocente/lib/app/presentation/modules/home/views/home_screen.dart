@@ -7,7 +7,7 @@ import 'dart:convert';
 import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/avatar_genero_widget.dart';
 import '../../../../../app/presentation/routes/routes.dart';
-import '../../../../data/services/supabase_service.dart';
+import '../../../../data/services/firebase/firebase_auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,6 +58,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.note_add,
       'label': 'Notas',
       'route': '/notas',
+    },
+    'evidencias': {
+      'icon': Icons.photo_library,
+      'label': 'Evidencias',
+      'route': '/evidencias',
     },
   };
 
@@ -186,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
+                      color: Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
@@ -259,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                               side: BorderSide(
-                                color: (advertencia['color'] as Color).withValues(alpha: 0.3),
+                                color: (advertencia['color'] as Color).withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -279,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: (advertencia['color'] as Color).withValues(alpha: 0.1),
+                                        color: (advertencia['color'] as Color).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -363,13 +368,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (confirm == true && mounted) {
       try {
-        // Cerrar sesión en Supabase
-        final supabase = SupabaseService.instance;
-        await supabase.signOut();
+        // Cerrar sesión en Firebase
+        final authService = FirebaseAuthService();
+        final result = await authService.signOut();
 
-        // Limpiar datos locales (opcional - si quieres mantener preferencias del usuario, comenta estas líneas)
-        // final prefs = await SharedPreferences.getInstance();
-        // await prefs.clear();
+        if (!result['success']) {
+          throw Exception(result['message']);
+        }
 
         if (mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil(
@@ -594,6 +599,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   color: Colors.green,
                 ),
+                _MenuCard(
+                  icon: Icons.photo_library,
+                  label: 'Evidencias',
+                  onTap: () {
+                    _navegarAActividad('evidencias', '/evidencias');
+                  },
+                  color: Colors.teal,
+                ),
                 const SizedBox(height: 16), // Espaciado final
               ],
             ),
@@ -623,10 +636,10 @@ class _QuickAccessChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -686,7 +699,7 @@ class _MenuCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
+                color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -720,13 +733,13 @@ class _SettingsBottomSheet extends StatefulWidget {
 class _SettingsBottomSheetState extends State<_SettingsBottomSheet> {
   Future<void> _handleSignOut() async {
     try {
-      // Cerrar sesión en Supabase
-      final supabase = SupabaseService.instance;
-      await supabase.signOut();
+      // Cerrar sesión en Firebase
+      final authService = FirebaseAuthService();
+      final result = await authService.signOut();
 
-      // Limpiar datos locales (opcional)
-      // final prefs = await SharedPreferences.getInstance();
-      // await prefs.clear();
+      if (!result['success']) {
+        throw Exception(result['message']);
+      }
 
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(

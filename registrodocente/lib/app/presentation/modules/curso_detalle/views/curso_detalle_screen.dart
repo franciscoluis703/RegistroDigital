@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../../routes/routes.dart';
 import '../../../widgets/avatar_genero_widget.dart';
 import '../../../themes/app_colors.dart';
 import '../../../widgets/common/educational_card.dart';
-import '../../../../data/services/estudiantes_service.dart';
+import '../../../../data/services/firebase/estudiantes_firestore_service.dart';
 import '../../../../data/services/curso_context_service.dart';
+import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/participation_wheel_widget.dart';
 
 class CursoDetalleScreen extends StatefulWidget {
@@ -17,30 +18,55 @@ class CursoDetalleScreen extends StatefulWidget {
 
 class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
   String _nombreDocente = 'Usuario';
-  final EstudiantesService _estudiantesService = EstudiantesService();
+  final EstudiantesFirestoreService _estudiantesService = EstudiantesFirestoreService();
   final CursoContextService _cursoContext = CursoContextService();
   List<String> _nombresEstudiantes = [];
+  String _cursoActual = '';
+  String _seccionActual = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cargar argumentos de la ruta
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+    if (args != null) {
+      _cursoActual = args['curso'] ?? 'Curso';
+      _seccionActual = args['seccion'] ?? 'A';
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _cargarDatosUsuario();
-    _cargarEstudiantes();
+    // Se cargará después de que se inicialicen las dependencias
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cargarDatosUsuario();
+      _cargarEstudiantes();
+    });
   }
 
   Future<void> _cargarDatosUsuario() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nombre = prefs.getString('usuario_nombre') ?? 'Usuario';
+    if (!mounted) return;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     setState(() {
-      _nombreDocente = nombre;
+      _nombreDocente = userProvider.nombre.isNotEmpty ? userProvider.nombre : 'Usuario';
     });
   }
 
   Future<void> _cargarEstudiantes() async {
-    final nombres = await _estudiantesService.obtenerNombresEstudiantes();
-    setState(() {
-      _nombresEstudiantes = nombres;
-    });
+    if (_cursoActual.isEmpty) return;
+
+    // Generar cursoId desde el nombre
+    final cursoId = _cursoActual.toLowerCase().replaceAll(' ', '_').replaceAll('-', '');
+
+    try {
+      final estudiantes = await _estudiantesService.obtenerEstudiantes(cursoId);
+      setState(() {
+        _nombresEstudiantes = estudiantes.map((e) => e.nombre).toList();
+      });
+    } catch (e) {
+      print('Error al cargar estudiantes: $e');
+    }
   }
 
   void _mostrarRuletaParticipacion() {
@@ -90,7 +116,7 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.08),
+                      color: AppColors.textPrimary.withOpacity(0.08),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -137,7 +163,7 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Divider(color: Colors.grey.withValues(alpha: 0.3)),
+                    Divider(color: Colors.grey.withOpacity(0.3)),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -197,7 +223,7 @@ class _CursoDetalleScreenState extends State<CursoDetalleScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.withValues(alpha: 0.3),
+                        color: Colors.purple.withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),

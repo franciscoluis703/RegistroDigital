@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../config/supabase_config.dart';
 
 class SupabaseService {
@@ -11,6 +12,7 @@ class SupabaseService {
     _instance ??= SupabaseService._();
     return _instance!;
   }
+  
 
   /// Inicializar Supabase
   static Future<void> initialize() async {
@@ -18,7 +20,7 @@ class SupabaseService {
       url: SupabaseConfig.supabaseUrl,
       anonKey: SupabaseConfig.supabaseAnonKey,
       authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.implicit,
+        authFlowType: AuthFlowType.pkce,
       ),
     );
     _client = Supabase.instance.client;
