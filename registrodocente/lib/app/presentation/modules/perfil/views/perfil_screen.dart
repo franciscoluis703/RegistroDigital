@@ -8,8 +8,13 @@ import '../../../../core/widgets/auto_save_indicator.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../../../../data/services/firebase/firebase_auth_service.dart';
 import '../../../../data/services/firebase/image_upload_service.dart';
+import '../../../themes/app_colors.dart';
+import '../../../widgets/common/dojo_card.dart';
+import '../../../widgets/common/dojo_input.dart';
+import '../../../widgets/common/dojo_button.dart';
 import '../../../routes/routes.dart';
 
+/// 🎨 Pantalla de Perfil - Diseño ClassDojo
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
 
@@ -89,7 +94,6 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
         avatarUrl: fotoPerfil,
       );
 
-      // Actualizar el provider global con los nuevos datos
       if (mounted) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.actualizarDatos(
@@ -111,41 +115,29 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
   }
 
   Future<void> _tomarFotoYSubir() async {
-    // Mostrar indicador de carga
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
       final imageUrl = await _imageUploadService.pickAndUploadProfileFromCamera();
 
       if (mounted) {
-        Navigator.pop(context); // Cerrar indicador de carga
+        Navigator.pop(context);
 
         if (imageUrl != null) {
-          setState(() {
-            fotoPerfil = imageUrl;
-          });
+          setState(() => fotoPerfil = imageUrl);
           final saved = await _guardarDatos();
           if (mounted && saved) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Foto de perfil actualizada'),
-                backgroundColor: Colors.green,
+                content: Text('Foto de perfil actualizada ✓'),
+                backgroundColor: AppColors.success,
               ),
             );
           }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se seleccionó ninguna imagen'),
-              backgroundColor: Colors.orange,
-            ),
-          );
         }
       }
     } catch (e) {
@@ -153,8 +145,8 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al subir la imagen: $e'),
-            backgroundColor: Colors.red,
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -162,41 +154,29 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
   }
 
   Future<void> _seleccionarDeGaleriaYSubir() async {
-    // Mostrar indicador de carga
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
       final imageUrl = await _imageUploadService.pickAndUploadProfileFromGallery();
 
       if (mounted) {
-        Navigator.pop(context); // Cerrar indicador de carga
+        Navigator.pop(context);
 
         if (imageUrl != null) {
-          setState(() {
-            fotoPerfil = imageUrl;
-          });
+          setState(() => fotoPerfil = imageUrl);
           final saved = await _guardarDatos();
           if (mounted && saved) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Foto de perfil actualizada'),
-                backgroundColor: Colors.green,
+                content: Text('Foto de perfil actualizada ✓'),
+                backgroundColor: AppColors.success,
               ),
             );
           }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se seleccionó ninguna imagen'),
-              backgroundColor: Colors.orange,
-            ),
-          );
         }
       }
     } catch (e) {
@@ -204,12 +184,123 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al subir la imagen: $e'),
-            backgroundColor: Colors.red,
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
     }
+  }
+
+  void _mostrarOpcionesFoto() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Cambiar foto de perfil',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
+              ),
+              const SizedBox(height: 24),
+              if (!kIsWeb && !Platform.isLinux) ...[
+                _buildPhotoOption(
+                  Icons.camera_alt,
+                  'Tomar foto',
+                  AppColors.primary,
+                  () async {
+                    Navigator.pop(context);
+                    await _tomarFotoYSubir();
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildPhotoOption(
+                  Icons.photo_library,
+                  'Galería',
+                  AppColors.secondary,
+                  () async {
+                    Navigator.pop(context);
+                    await _seleccionarDeGaleriaYSubir();
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+              _buildPhotoOption(
+                Icons.link,
+                'URL de imagen',
+                AppColors.tertiary,
+                () {
+                  Navigator.pop(context);
+                  _mostrarDialogoURL();
+                },
+              ),
+              if (fotoPerfil != 'https://i.pravatar.cc/150?img=3') ...[
+                const SizedBox(height: 12),
+                _buildPhotoOption(
+                  Icons.delete,
+                  'Eliminar foto',
+                  AppColors.error,
+                  () async {
+                    setState(() => fotoPerfil = 'https://i.pravatar.cc/150?img=3');
+                    notifyChange();
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Foto restaurada')),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPhotoOption(IconData icon, String text, Color color, VoidCallback onTap) {
+    return DojoCard(
+      style: DojoCardStyle.normal,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                text,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textTertiary),
+          ],
+        ),
+      ),
+    );
   }
 
   void _mostrarDialogoURL() {
@@ -218,26 +309,24 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cambiar Foto de Perfil'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('URL de Imagen'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Ingresa la URL de tu foto de perfil:'),
-            const SizedBox(height: 16),
-            TextField(
+            DojoInput(
+              label: 'URL de la imagen',
+              hint: 'https://ejemplo.com/foto.jpg',
+              prefixIcon: Icons.link,
               controller: urlController,
-              decoration: const InputDecoration(
-                labelText: 'URL de la imagen',
-                hintText: 'https://ejemplo.com/mi-foto.jpg',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.link),
-              ),
               keyboardType: TextInputType.url,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'También puedes usar avatares de:\n• https://i.pravatar.cc/150?img=X\n• https://ui-avatars.com/api/?name=Tu+Nombre',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text(
+              'Puedes usar: pravatar.cc o ui-avatars.com',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
             ),
           ],
         ),
@@ -249,160 +338,21 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
             },
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          DojoButton(
+            text: 'Guardar',
+            style: DojoButtonStyle.primary,
+            size: DojoButtonSize.small,
             onPressed: () {
               if (urlController.text.trim().isNotEmpty) {
-                setState(() {
-                  fotoPerfil = urlController.text.trim();
-                });
+                setState(() => fotoPerfil = urlController.text.trim());
                 _guardarDatos();
                 urlController.dispose();
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Foto de perfil actualizada'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
               }
             },
-            child: const Text('Guardar'),
           ),
         ],
       ),
-    );
-  }
-
-  void _mostrarOpcionesFoto() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Cambiar foto de perfil',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Mostrar opciones de cámara y galería solo en plataformas soportadas
-              if (!kIsWeb && !Platform.isLinux) ...[
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.camera_alt, color: Colors.blue),
-                  ),
-                  title: const Text('Tomar foto'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _tomarFotoYSubir();
-                  },
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.photo_library, color: Colors.green),
-                  ),
-                  title: const Text('Seleccionar de galería'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _seleccionarDeGaleriaYSubir();
-                  },
-                ),
-              ],
-              // En Linux, mostrar un mensaje informativo
-              if (!kIsWeb && Platform.isLinux)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'En Linux, usa la opción "URL de imagen" para cambiar tu foto',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.link, color: Colors.orange),
-                ),
-                title: const Text('Usar URL de imagen'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _mostrarDialogoURL();
-                },
-              ),
-              if (fotoPerfil != 'https://i.pravatar.cc/150?img=3')
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.delete, color: Colors.red),
-                  ),
-                  title: const Text(
-                    'Eliminar foto',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () async {
-                    setState(() {
-                      fotoPerfil = 'https://i.pravatar.cc/150?img=3';
-                    });
-                    notifyChange();
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Foto de perfil restaurada'),
-                        ),
-                      );
-                    }
-                  },
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -410,20 +360,15 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Mi Perfil'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.black),
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -443,35 +388,28 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Foto de perfil
+              // Foto de perfil con diseño ClassDojo
               Center(
                 child: Stack(
                   children: [
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        gradient: AppColors.primaryGradient,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.withOpacity(0.4),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.2),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 30,
-                            spreadRadius: 10,
-                            offset: const Offset(0, 4),
+                            spreadRadius: 8,
+                            offset: const Offset(0, 12),
                           ),
                         ],
-                        border: Border.all(
-                          color: Colors.blue,
-                          width: 4,
-                        ),
                       ),
+                      padding: const EdgeInsets.all(6),
                       child: CircleAvatar(
                         radius: 70,
                         backgroundImage: NetworkImage(fotoPerfil),
+                        backgroundColor: Colors.white,
                       ),
                     ),
                     Positioned(
@@ -480,31 +418,21 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
                       child: GestureDetector(
                         onTap: _mostrarOpcionesFoto,
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Colors.blue, Colors.blueAccent],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                            gradient: AppColors.secondaryGradient,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.5),
-                                blurRadius: 10,
+                                color: AppColors.secondary.withValues(alpha: 0.4),
+                                blurRadius: 15,
                                 offset: const Offset(0, 4),
                               ),
                             ],
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 3,
-                            ),
+                            border: Border.all(color: Colors.white, width: 4),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 24),
                         ),
                       ),
                     ),
@@ -513,278 +441,177 @@ class _PerfilScreenState extends State<PerfilScreen> with AutoSaveMixin {
               ),
               const SizedBox(height: 32),
 
-              // Métodos de Acceso / Seguridad
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 15,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.blue.withOpacity(0.2), width: 2),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.pushNamed(context, Routes.authProviders);
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Colors.blue, Colors.blueAccent],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.security,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Métodos de Acceso',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Gestiona tus métodos de inicio de sesión',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.blue,
-                            size: 20,
-                          ),
-                        ],
+              // Métodos de Acceso
+              DojoCard(
+                style: DojoCardStyle.primary,
+                onTap: () => Navigator.pushNamed(context, Routes.authProviders),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.security, color: Colors.white, size: 28),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Métodos de Acceso',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Gestiona tus métodos de inicio de sesión',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 18, color: AppColors.primary),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 32),
 
-              // Sección de información personal
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: const Text(
-                  'INFORMACIÓN PERSONAL',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Formulario de datos
-              _buildTextField(
-                controller: _nombreController,
-                label: 'Nombre completo',
-                icon: Icons.person,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _emailController,
-                label: 'Correo electrónico',
-                icon: Icons.email,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _centroController,
-                label: 'Centro educativo',
-                icon: Icons.school,
-              ),
-              const SizedBox(height: 16),
+              // Información Personal
               Row(
                 children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _regionalController,
-                      label: 'Regional',
-                      icon: Icons.location_on,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _distritoController,
-                      label: 'Distrito',
-                      icon: Icons.location_city,
-                    ),
+                  const Icon(Icons.person, color: AppColors.secondary, size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Información Personal',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: _telefonoController,
-                label: 'Teléfono',
-                icon: Icons.phone,
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _direccionController,
-                label: 'Dirección',
-                icon: Icons.home,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
 
-              // Género
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              DojoCard(
+                style: DojoCardStyle.normal,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    DojoInput(
+                      controller: _nombreController,
+                      label: 'Nombre completo',
+                      prefixIcon: Icons.person_outline,
+                      onChanged: (_) => notifyChange(),
+                    ),
+                    const SizedBox(height: 16),
+                    DojoInput(
+                      controller: _emailController,
+                      label: 'Correo electrónico',
+                      prefixIcon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (_) => notifyChange(),
+                    ),
+                    const SizedBox(height: 16),
+                    DojoInput(
+                      controller: _centroController,
+                      label: 'Centro educativo',
+                      prefixIcon: Icons.school_outlined,
+                      onChanged: (_) => notifyChange(),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DojoInput(
+                            controller: _regionalController,
+                            label: 'Regional',
+                            prefixIcon: Icons.location_on_outlined,
+                            onChanged: (_) => notifyChange(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DojoInput(
+                            controller: _distritoController,
+                            label: 'Distrito',
+                            prefixIcon: Icons.location_city_outlined,
+                            onChanged: (_) => notifyChange(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DojoInput(
+                      controller: _telefonoController,
+                      label: 'Teléfono',
+                      prefixIcon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                      onChanged: (_) => notifyChange(),
+                    ),
+                    const SizedBox(height: 16),
+                    DojoInput(
+                      controller: _direccionController,
+                      label: 'Dirección',
+                      prefixIcon: Icons.home_outlined,
+                      maxLines: 2,
+                      onChanged: (_) => notifyChange(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Género dropdown
+                    DropdownButtonFormField<String>(
+                      initialValue: _genero,
+                      decoration: const InputDecoration(
+                        labelText: 'Género',
+                        prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'masculino', child: Text('Masculino')),
+                        DropdownMenuItem(value: 'femenino', child: Text('Femenino')),
+                        DropdownMenuItem(value: 'otro', child: Text('Otro')),
+                      ],
+                      onChanged: (value) {
+                        setState(() => _genero = value);
+                        notifyChange();
+                      },
                     ),
                   ],
-                ),
-                child: DropdownButtonFormField<String>(
-                  initialValue: _genero,
-                  decoration: InputDecoration(
-                    labelText: 'Género',
-                    prefixIcon: const Icon(Icons.person_outline, color: Colors.blue),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.blue, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'masculino', child: Text('Masculino')),
-                    DropdownMenuItem(value: 'femenino', child: Text('Femenino')),
-                    DropdownMenuItem(value: 'otro', child: Text('Otro')),
-                  ],
-                  onChanged: (value) {
-                    setState(() => _genero = value);
-                    notifyChange();
-                  },
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Info de autoguardado
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
+              DojoCard(
+                style: DojoCardStyle.success,
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                    SizedBox(width: 8),
+                    const Icon(Icons.check_circle, color: AppColors.success, size: 24),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Los cambios se guardan automáticamente',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        onChanged: (_) => notifyChange(),
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Colors.blue),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue.withOpacity(0.3), width: 2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.blue, width: 2),
-          ),
-          filled: true,
-          fillColor: Colors.white,
         ),
       ),
     );
