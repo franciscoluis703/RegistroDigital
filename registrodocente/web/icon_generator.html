@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Iconos Duolingo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #58CC02;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #58CC02;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #3DA700;
+        }
+        .preview {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .icon-preview {
+            text-align: center;
+        }
+        .instructions {
+            background: #E7F9E1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #58CC02;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦉 Generador de Iconos Duolingo</h1>
+        <p>Este generador crea iconos inspirados en Duolingo para tu app.</p>
+
+        <div class="preview">
+            <div class="icon-preview">
+                <p><strong>192x192</strong></p>
+                <canvas id="canvas192" width="192" height="192"></canvas>
+                <br>
+                <button onclick="downloadIcon(192)">Descargar Icon-192.png</button>
+            </div>
+            <div class="icon-preview">
+                <p><strong>512x512</strong></p>
+                <canvas id="canvas512" width="512" height="512"></canvas>
+                <br>
+                <button onclick="downloadIcon(512)">Descargar Icon-512.png</button>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📝 Instrucciones:</h3>
+            <ol>
+                <li>Haz clic en los botones "Descargar" para guardar cada icono</li>
+                <li>Renombra los archivos descargados a:
+                    <ul>
+                        <li><code>Icon-192.png</code></li>
+                        <li><code>Icon-512.png</code></li>
+                        <li><code>Icon-maskable-192.png</code> (copia del 192)</li>
+                        <li><code>Icon-maskable-512.png</code> (copia del 512)</li>
+                    </ul>
+                </li>
+                <li>Coloca los archivos en: <code>web/icons/</code></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const scale = size / 512;
+
+            // Limpiar canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Fondo circular con gradiente verde Duolingo
+            const greenGradient = ctx.createLinearGradient(0, 0, size, size);
+            greenGradient.addColorStop(0, '#58CC02');
+            greenGradient.addColorStop(1, '#3DA700');
+
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, 240 * scale, 0, Math.PI * 2);
+            ctx.fillStyle = greenGradient;
+            ctx.fill();
+
+            // Sombra
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = '#2D3748';
+            ctx.beginPath();
+            ctx.ellipse(size/2, 480 * scale, 200 * scale, 20 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Libro
+            ctx.save();
+            ctx.translate(size/2, size/2);
+            ctx.scale(scale, scale);
+
+            // Libro base
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#2D3748';
+            ctx.lineWidth = 8;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-120, -40);
+            ctx.lineTo(-120, 100);
+            ctx.lineTo(0, 80);
+            ctx.lineTo(120, 100);
+            ctx.lineTo(120, -40);
+            ctx.lineTo(0, -20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Línea central
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(0, -20);
+            ctx.lineTo(0, 80);
+            ctx.stroke();
+
+            // Líneas de texto verdes (izquierda)
+            ctx.strokeStyle = '#58CC02';
+            ctx.lineCap = 'round';
+            [-10, 10, 30].forEach(y => {
+                ctx.beginPath();
+                ctx.moveTo(-80, y);
+                ctx.lineTo(-40, y);
+                ctx.stroke();
+            });
+
+            // Líneas de texto azules (derecha)
+            ctx.strokeStyle = '#1CB0F6';
+            [-10, 10, 30].forEach(y => {
+                ctx.beginPath();
+                ctx.moveTo(40, y);
+                ctx.lineTo(80, y);
+                ctx.stroke();
+            });
+
+            // Estrella dorada
+            ctx.save();
+            ctx.translate(0, -100);
+            ctx.fillStyle = '#FFBF00';
+            ctx.strokeStyle = '#FF9600';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                const x = Math.cos(angle) * (i % 2 === 0 ? 30 : 12);
+                const y = Math.sin(angle) * (i % 2 === 0 ? 30 : 12);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function downloadIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const link = document.createElement('a');
+            link.download = `Icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Dibujar iconos al cargar
+        window.onload = function() {
+            drawIcon(document.getElementById('canvas192'));
+            drawIcon(document.getElementById('canvas512'));
+        };
+    </script>
+</body>
+</html>

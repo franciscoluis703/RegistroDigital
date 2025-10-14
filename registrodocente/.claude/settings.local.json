@@ -52,7 +52,13 @@
       "Bash(git checkout:*)",
       "Bash(mkdir:*)",
       "Read(//tmp/**)",
-      "WebFetch(domain:es.duolingo.com)"
+      "WebFetch(domain:es.duolingo.com)",
+      "Bash(python3 -m pip install:*)",
+      "Bash(xdg-open:*)",
+      "Bash(firefox:*)",
+      "Bash(google-chrome:*)",
+      "Bash(echo:*)",
+      "Read(//home/francisco/Descargas/**)"
     ],
     "deny": [],
     "ask": []
