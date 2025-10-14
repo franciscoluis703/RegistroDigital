@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../data/services/firebase/notas_firestore_service.dart';
+import '../../../themes/app_colors.dart';
+import '../../../widgets/common/dojo_card.dart';
+import '../../../widgets/common/dojo_button.dart';
+import '../../../widgets/common/dojo_input.dart';
+import '../../../widgets/common/empty_state.dart';
 
+/// 🎨 Pantalla de Bloc de Notas - Diseño ClassDojo
 class NotasScreen extends StatefulWidget {
   const NotasScreen({super.key});
 
@@ -58,16 +64,25 @@ class _NotasScreenState extends State<NotasScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar nota'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.delete_outline, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Eliminar nota'),
+          ],
+        ),
         content: const Text('¿Estás seguro que deseas eliminar esta nota?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
             child: const Text('Eliminar'),
           ),
         ],
@@ -79,7 +94,12 @@ class _NotasScreenState extends State<NotasScreen> {
       _cargarNotas();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nota eliminada')),
+          SnackBar(
+            content: const Text('Nota eliminada exitosamente'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
       }
     }
@@ -87,12 +107,12 @@ class _NotasScreenState extends State<NotasScreen> {
 
   Color _getColorFromIndex(int index) {
     final colors = [
-      Colors.purple,
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.pink,
-      Colors.teal,
+      AppColors.accent,
+      AppColors.secondary,
+      AppColors.tertiary,
+      AppColors.pink,
+      AppColors.info,
+      AppColors.warning,
     ];
     return colors[index % colors.length];
   }
@@ -100,48 +120,42 @@ class _NotasScreenState extends State<NotasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Bloc de Notas'),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: Row(
+          children: const [
+            Icon(Icons.note_add, size: 24),
+            SizedBox(width: 8),
+            Text('Bloc de Notas'),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _crearNota,
-        backgroundColor: Colors.purple,
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva Nota'),
+        backgroundColor: AppColors.secondary,
+        elevation: 4,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Nueva Nota',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.secondary,
+              ),
+            )
           : _notas.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.note_alt_outlined,
-                        size: 80,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No hay notas',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Toca el botón + para crear una nota',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
+              ? const EmptyState(
+                  icon: Icons.note_alt_outlined,
+                  title: 'No hay notas',
+                  message: 'Toca el botón + para crear una nota',
+                  iconColor: AppColors.accent,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -150,19 +164,11 @@ class _NotasScreenState extends State<NotasScreen> {
                     final nota = _notas[index];
                     final color = _getColorFromIndex(index);
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: color.withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: InkWell(
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: DojoCard(
+                        style: DojoCardStyle.normal,
                         onTap: () => _editarNota(nota),
-                        borderRadius: BorderRadius.circular(12),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -171,44 +177,48 @@ class _NotasScreenState extends State<NotasScreen> {
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(8),
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
-                                      color: color.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: color.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: Icon(
                                       Icons.note,
                                       color: color,
-                                      size: 20,
+                                      size: 24,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: Text(
                                       nota['titulo'] ?? 'Sin título',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.textPrimary,
+                                          ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline),
-                                    color: Colors.red[400],
+                                    color: AppColors.error,
+                                    iconSize: 24,
                                     onPressed: () => _eliminarNota(nota['id']),
+                                    tooltip: 'Eliminar nota',
                                   ),
                                 ],
                               ),
-                              if (nota['contenido'] != null && nota['contenido'].isNotEmpty) ...[
+                              if (nota['contenido'] != null &&
+                                  nota['contenido'].toString().isNotEmpty) ...[
                                 const SizedBox(height: 12),
                                 Text(
                                   nota['contenido'],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.textSecondary,
+                                        height: 1.5,
+                                      ),
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -216,14 +226,18 @@ class _NotasScreenState extends State<NotasScreen> {
                               const SizedBox(height: 12),
                               Row(
                                 children: [
-                                  Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 16,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                  const SizedBox(width: 6),
                                   Text(
                                     _formatearFecha(nota['updated_at'] ?? nota['created_at']),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[500],
-                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.textTertiary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -265,6 +279,7 @@ class _NotasScreenState extends State<NotasScreen> {
   }
 }
 
+/// 🎨 Editor de Notas - Diseño ClassDojo
 class EditorNotaScreen extends StatefulWidget {
   final Map<String, dynamic>? nota;
 
@@ -299,7 +314,12 @@ class _EditorNotaScreenState extends State<EditorNotaScreen> {
   Future<void> _guardarNota() async {
     if (_tituloController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El título es obligatorio')),
+        SnackBar(
+          content: const Text('El título es obligatorio'),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
@@ -327,6 +347,9 @@ class _EditorNotaScreenState extends State<EditorNotaScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.nota != null ? 'Nota actualizada' : 'Nota creada'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -335,7 +358,9 @@ class _EditorNotaScreenState extends State<EditorNotaScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al guardar: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -349,73 +374,114 @@ class _EditorNotaScreenState extends State<EditorNotaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(widget.nota != null ? 'Editar Nota' : 'Nueva Nota'),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
         actions: [
-          if (_isSaving)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                ),
-              ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.check),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: DojoButton(
+              text: 'Guardar',
+              icon: Icons.check,
+              style: DojoButtonStyle.secondary,
+              size: DojoButtonSize.small,
+              isLoading: _isSaving,
               onPressed: _guardarNota,
-              tooltip: 'Guardar',
             ),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _tituloController,
-              decoration: InputDecoration(
-                hintText: 'Título de la nota',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Card con el formulario
+              DojoCard(
+                style: DojoCardStyle.normal,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Icono decorativo
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.secondaryGradient,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.secondary.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 4,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.note_add,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Campo de título
+                    DojoInput(
+                      label: 'Título de la nota',
+                      hint: 'Escribe un título descriptivo',
+                      controller: _tituloController,
+                      prefixIcon: Icons.title,
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'El título es obligatorio';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Campo de contenido
+                    DojoInput(
+                      label: 'Contenido',
+                      hint: 'Escribe tus notas aquí...',
+                      controller: _contenidoController,
+                      prefixIcon: Icons.notes,
+                      maxLines: 12,
+                      textInputAction: TextInputAction.newline,
+                    ),
+                  ],
                 ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                prefixIcon: const Icon(Icons.title),
               ),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _contenidoController,
-                decoration: InputDecoration(
-                  hintText: 'Escribe tus notas aquí...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
+              const SizedBox(height: 24),
+
+              // Información adicional
+              DojoCard(
+                style: DojoCardStyle.secondary,
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.secondary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tus notas se guardan automáticamente en la nube',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                textCapitalization: TextCapitalization.sentences,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
