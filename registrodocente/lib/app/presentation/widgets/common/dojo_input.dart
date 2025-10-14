@@ -118,13 +118,13 @@ class _DojoInputState extends State<DojoInput>
             child: Text(
               widget.label!,
               style: GoogleFonts.nunito(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
                 color: hasError
                     ? AppColors.error
                     : _isFocused
-                        ? AppColors.primary
-                        : AppColors.textSecondary,
+                        ? AppColors.secondary
+                        : AppColors.textPrimary,
                 letterSpacing: 0.3,
               ),
             ),
@@ -142,9 +142,9 @@ class _DojoInputState extends State<DojoInput>
                     ? [
                         BoxShadow(
                           color: hasError
-                              ? AppColors.error.withValues(alpha: 0.2)
-                              : AppColors.primary.withValues(alpha: 0.2),
-                          blurRadius: 12,
+                              ? AppColors.error.withValues(alpha: 0.25)
+                              : AppColors.secondary.withValues(alpha: 0.3),
+                          blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
                       ]
@@ -167,10 +167,11 @@ class _DojoInputState extends State<DojoInput>
                 validator: widget.validator,
                 autovalidateMode: widget.autovalidateMode,
                 style: GoogleFonts.nunito(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  letterSpacing: 0.3,
+                  letterSpacing: 0.2,
+                  height: 1.5,
                 ),
                 decoration: InputDecoration(
                   hintText: widget.hint,
@@ -192,7 +193,7 @@ class _DojoInputState extends State<DojoInput>
                             color: hasError
                                 ? AppColors.error
                                 : _isFocused
-                                    ? AppColors.primary
+                                    ? AppColors.secondary
                                     : AppColors.textSecondary,
                             size: 24,
                           ),
@@ -205,7 +206,7 @@ class _DojoInputState extends State<DojoInput>
                             color: hasError
                                 ? AppColors.error
                                 : _isFocused
-                                    ? AppColors.primary
+                                    ? AppColors.secondary
                                     : AppColors.textSecondary,
                             size: 24,
                           ),
@@ -229,8 +230,8 @@ class _DojoInputState extends State<DojoInput>
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: hasError ? AppColors.error : AppColors.primary,
-                      width: _borderAnimation.value,
+                      color: hasError ? AppColors.error : AppColors.secondary,
+                      width: 3.0,
                     ),
                   ),
                   errorBorder: OutlineInputBorder(
@@ -255,10 +256,10 @@ class _DojoInputState extends State<DojoInput>
                     ),
                   ),
                   hintStyle: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textTertiary,
-                    letterSpacing: 0.3,
+                    letterSpacing: 0.2,
                   ),
                   helperStyle: GoogleFonts.nunito(
                     fontSize: 13,

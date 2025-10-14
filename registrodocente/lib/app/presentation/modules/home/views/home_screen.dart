@@ -273,6 +273,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // Botón prominente de Cursos
+                DojoButton(
+                  text: 'Mis Cursos',
+                  icon: Icons.class_outlined,
+                  style: DojoButtonStyle.secondary,
+                  size: DojoButtonSize.large,
+                  isFullWidth: true,
+                  onPressed: () => _navegarAActividad('cursos', '/cursos'),
+                ),
+                const SizedBox(height: 32),
+
                 // Accesos rápidos
                 Row(
                   children: [
@@ -298,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisCount: 3,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 1.0,
+                          childAspectRatio: 0.95,
                         ),
                         itemCount: _actividadesFrecuentes.length,
                         itemBuilder: (context, index) {
@@ -449,33 +460,30 @@ class _QuickAccessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DojoCard(
       style: DojoCardStyle.normal,
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.all(16),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color, size: 26),
+            child: Icon(icon, color: color, size: 32),
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
