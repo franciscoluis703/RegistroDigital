@@ -1,4 +1,3 @@
-
 // lib/app/presentation/modules/home/views/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,9 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/avatar_genero_widget.dart';
+import '../../../themes/app_colors.dart';
+import '../../../widgets/common/dojo_card.dart';
+import '../../../widgets/common/dojo_badge.dart';
+import '../../../widgets/common/dojo_button.dart';
 import '../../../../../app/presentation/routes/routes.dart';
 import '../../../../data/services/firebase/firebase_auth_service.dart';
 
+/// 🎨 Pantalla de Home/Dashboard - Diseño ClassDojo
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -23,50 +27,59 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.check_circle_outline,
       'label': 'Asistencia',
       'route': '/asistencias_menu',
+      'color': AppColors.primary,
     },
     'calificaciones': {
       'icon': Icons.grade,
       'label': 'Calificaciones',
       'route': '/calificaciones',
+      'color': AppColors.warning,
     },
     'promocion': {
       'icon': Icons.school,
       'label': 'Promoción',
       'route': '/promocion_grado',
+      'color': AppColors.secondary,
     },
     'horario': {
       'icon': Icons.access_time,
       'label': 'Horario',
       'route': '/horario-clase',
+      'color': AppColors.tertiary,
     },
     'calendario': {
       'icon': Icons.calendar_today,
       'label': 'Calendario',
       'route': '/calendario-escolar',
+      'color': AppColors.info,
     },
     'cursos': {
-      'icon': Icons.home,
+      'icon': Icons.class_outlined,
       'label': 'Cursos',
       'route': '/cursos',
+      'color': AppColors.error,
     },
     'perfil': {
       'icon': Icons.person,
       'label': 'Perfil',
       'route': '/perfil',
+      'color': AppColors.accent,
     },
     'notas': {
       'icon': Icons.note_add,
       'label': 'Notas',
       'route': '/notas',
+      'color': AppColors.accent,
     },
     'evidencias': {
       'icon': Icons.photo_library,
       'label': 'Evidencias',
       'route': '/evidencias',
+      'color': AppColors.info,
     },
   };
 
-  // Lista de actividades más usadas (ordenadas por frecuencia)
+  // Lista de actividades más usadas
   List<String> _actividadesFrecuentes = [];
 
   @override
@@ -77,8 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _cargarDatosUsuario() async {
-    // Cargar datos del usuario desde el provider
-    // Usar addPostFrameCallback para evitar llamar setState durante build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.cargarDatosUsuario();
@@ -90,21 +101,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final actividadesJson = prefs.getString('actividades_uso');
 
     if (actividadesJson != null) {
-      // Cargar el mapa de uso de actividades
       final Map<String, dynamic> usoActividades = json.decode(actividadesJson);
-
-      // Ordenar por frecuencia de uso (de mayor a menor)
       final actividadesOrdenadas = usoActividades.entries.toList()
         ..sort((a, b) => (b.value as int).compareTo(a.value as int));
 
       setState(() {
         _actividadesFrecuentes = actividadesOrdenadas
-          .map((e) => e.key)
-          .take(5)
-          .toList();
+            .map((e) => e.key)
+            .take(6)
+            .toList();
       });
     } else {
-      // Si no hay datos, usar actividades por defecto
       setState(() {
         _actividadesFrecuentes = [
           'asistencia',
@@ -112,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'promocion',
           'horario',
           'calendario',
+          'cursos',
         ];
       });
     }
@@ -126,13 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
       usoActividades = json.decode(actividadesJson);
     }
 
-    // Incrementar el contador de uso
     usoActividades[actividadId] = (usoActividades[actividadId] ?? 0) + 1;
-
-    // Guardar actualizado
     await prefs.setString('actividades_uso', json.encode(usoActividades));
-
-    // Recargar las actividades frecuentes
     await _cargarActividadesFrecuentes();
   }
 
@@ -141,226 +144,30 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, ruta);
   }
 
-  void _mostrarAdvertencias(BuildContext context) {
-    // Lista de advertencias (esto debería venir de una fuente de datos real)
-    final List<Map<String, dynamic>> advertencias = [
-      {
-        'titulo': 'Asistencias pendientes',
-        'descripcion': 'Tienes 3 días sin registrar asistencia en Lengua Española',
-        'tipo': 'asistencia',
-        'icono': Icons.check_circle_outline,
-        'color': Colors.orange,
-        'ruta': '/asistencias_menu',
-        'actividadId': 'asistencia',
-      },
-      {
-        'titulo': 'Calificaciones incompletas',
-        'descripcion': '5 estudiantes sin calificación en el periodo actual',
-        'tipo': 'calificaciones',
-        'icono': Icons.grade,
-        'color': Colors.red,
-        'ruta': '/calificaciones',
-        'actividadId': 'calificaciones',
-      },
-      {
-        'titulo': 'Horario sin configurar',
-        'descripcion': 'Aún no has configurado tu horario de clases',
-        'tipo': 'horario',
-        'icono': Icons.access_time,
-        'color': Colors.blue,
-        'ruta': '/horario-clase',
-        'actividadId': 'horario',
-      },
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Advertencias',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${advertencias.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${advertencias.length} ${advertencias.length == 1 ? "advertencia pendiente" : "advertencias pendientes"}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 16),
-              Expanded(
-                child: advertencias.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 64,
-                              color: Colors.green,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'No hay advertencias',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: advertencias.length,
-                        itemBuilder: (context, index) {
-                          final advertencia = advertencias[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: (advertencia['color'] as Color).withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.pop(context);
-                                _navegarAActividad(
-                                  advertencia['actividadId'] as String,
-                                  advertencia['ruta'] as String,
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: (advertencia['color'] as Color).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        advertencia['icono'] as IconData,
-                                        color: advertencia['color'] as Color,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            advertencia['titulo'] as String,
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            advertencia['descripcion'] as String,
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      size: 16,
-                                      color: advertencia['color'] as Color,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showSettingsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => const _SettingsBottomSheet(),
-    );
-  }
-
   Future<void> _cerrarSesion() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cerrar sesión'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.logout, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Cerrar sesión'),
+          ],
+        ),
         content: const Text('¿Estás seguro que deseas cerrar sesión?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Cerrar sesión'),
           ),
         ],
       ),
@@ -368,7 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (confirm == true && mounted) {
       try {
-        // Cerrar sesión en Firebase
         final authService = FirebaseAuthService();
         final result = await authService.signOut();
 
@@ -386,8 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al cerrar sesión: ${e.toString()}'),
-              backgroundColor: Colors.red,
+              content: Text(e.toString().replaceAll('Exception: ', '')),
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -398,9 +204,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Inicio'),
+        title: Row(
+          children: const [
+            Icon(Icons.menu_book, size: 24),
+            SizedBox(width: 8),
+            Text('Registro Docente'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -414,200 +226,149 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Cabecera con foto y datos
-                Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      _navegarAActividad('perfil', '/perfil');
-                    },
-                    child: const AvatarGeneroWidget(radius: 40),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Consumer<UserProvider>(
-                      builder: (context, userProvider, child) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              userProvider.nombre.isEmpty ? 'Usuario' : userProvider.nombre,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              userProvider.centroEducativo.isEmpty
-                                ? 'Centro Educativo Eugenio M. de Hostos'
-                                : userProvider.centroEducativo,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Regional: ${userProvider.regional.isEmpty ? "17" : userProvider.regional} | Distrito: ${userProvider.distrito.isEmpty ? "04" : userProvider.distrito}',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Botón de advertencias
-                  IconButton(
-                    icon: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const Icon(Icons.warning_amber_rounded, size: 28, color: Colors.orange),
-                        Positioned(
-                          right: -4,
-                          top: -4,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 18,
-                              minHeight: 18,
-                            ),
-                            child: const Text(
-                              '3',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    onPressed: () => _mostrarAdvertencias(context),
-                    tooltip: 'Advertencias',
-                  ),
-                  // Botón de configuración
-                  IconButton(
-                    icon: const Icon(Icons.settings, size: 28),
-                    onPressed: () => _showSettingsBottomSheet(context),
-                    tooltip: 'Configuración',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // Accesos rápidos
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade400, Colors.blue.shade600],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.flash_on, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Accesos Rápidos',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _actividadesFrecuentes.isEmpty
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          ),
-                        )
-                      : Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _actividadesFrecuentes.map((actividadId) {
-                            final actividad = _actividadesDisponibles[actividadId];
-                            if (actividad == null) return const SizedBox.shrink();
-
-                            return _QuickAccessChip(
-                              icon: actividad['icon'] as IconData,
-                              label: actividad['label'] as String,
-                              onTap: () => _navegarAActividad(
-                                actividadId,
-                                actividad['route'] as String,
-                              ),
+                // Tarjeta de bienvenida con diseño ClassDojo
+                DojoCard(
+                  style: DojoCardStyle.gradient,
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _navegarAActividad('perfil', '/perfil'),
+                        child: const AvatarGeneroWidget(radius: 35),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Consumer<UserProvider>(
+                          builder: (context, userProvider, child) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '¡Hola, ${userProvider.nombre.isEmpty ? 'Usuario' : userProvider.nombre.split(' ')[0]}! 👋',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  userProvider.centroEducativo.isEmpty
+                                      ? 'Centro Educativo'
+                                      : userProvider.centroEducativo,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                      ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             );
-                          }).toList(),
+                          },
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Accesos rápidos
+                Row(
+                  children: [
+                    const Icon(Icons.flash_on, color: AppColors.tertiary, size: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Accesos Rápidos',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                _actividadesFrecuentes.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.0,
+                        ),
+                        itemCount: _actividadesFrecuentes.length,
+                        itemBuilder: (context, index) {
+                          final actividadId = _actividadesFrecuentes[index];
+                          final actividad = _actividadesDisponibles[actividadId];
+                          if (actividad == null) return const SizedBox.shrink();
+
+                          return _QuickAccessCard(
+                            icon: actividad['icon'] as IconData,
+                            label: actividad['label'] as String,
+                            color: actividad['color'] as Color,
+                            onTap: () => _navegarAActividad(
+                              actividadId,
+                              actividad['route'] as String,
+                            ),
+                          );
+                        },
+                      ),
+                const SizedBox(height: 32),
+
+                // Todas las actividades
+                Row(
+                  children: [
+                    const Icon(Icons.apps, color: AppColors.secondary, size: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Todas las Actividades',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildActivityCard(
+                  'Bloc de Notas',
+                  'Registra notas rápidas y observaciones',
+                  Icons.note_add,
+                  AppColors.accent,
+                  () => _navegarAActividad('notas', '/notas'),
+                ),
+                _buildActivityCard(
+                  'Evidencias',
+                  'Gestiona fotos y documentos',
+                  Icons.photo_library,
+                  AppColors.info,
+                  () => _navegarAActividad('evidencias', '/evidencias'),
+                ),
+                _buildActivityCard(
+                  'Mi Perfil',
+                  'Actualiza tu información personal',
+                  Icons.person,
+                  AppColors.secondary,
+                  () => _navegarAActividad('perfil', '/perfil'),
+                ),
+
                 const SizedBox(height: 24),
-                // Botones tipo card
-                _MenuCard(
-                  icon: Icons.note_add,
-                  label: 'Bloc de Notas',
-                  onTap: () {
-                    _navegarAActividad('notas', '/notas');
-                  },
-                  color: Colors.purple,
+
+                // Footer con versión
+                Center(
+                  child: Text(
+                    'Versión 1.0.0 • ClassDojo Style',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                  ),
                 ),
-                _MenuCard(
-                  icon: Icons.home,
-                  label: 'Cursos',
-                  onTap: () {
-                    _navegarAActividad('cursos', '/cursos');
-                  },
-                  color: Colors.red,
-                ),
-                _MenuCard(
-                  icon: Icons.access_time,
-                  label: 'Horario de clase',
-                  onTap: () {
-                    _navegarAActividad('horario', '/horario-clase');
-                  },
-                  color: Colors.orange,
-                ),
-                _MenuCard(
-                  icon: Icons.calendar_today,
-                  label: 'Calendario escolar',
-                  onTap: () {
-                    _navegarAActividad('calendario', '/calendario-escolar');
-                  },
-                  color: Colors.green,
-                ),
-                _MenuCard(
-                  icon: Icons.photo_library,
-                  label: 'Evidencias',
-                  onTap: () {
-                    _navegarAActividad('evidencias', '/evidencias');
-                  },
-                  color: Colors.teal,
-                ),
-                const SizedBox(height: 16), // Espaciado final
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -615,207 +376,106 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
 
-class _QuickAccessChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _QuickAccessChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 18),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+  Widget _buildActivityCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DojoCard(
+        style: DojoCardStyle.normal,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: color, size: 28),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _MenuCard({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsBottomSheet extends StatefulWidget {
-  const _SettingsBottomSheet();
-
-  @override
-  State<_SettingsBottomSheet> createState() => _SettingsBottomSheetState();
-}
-
-class _SettingsBottomSheetState extends State<_SettingsBottomSheet> {
-  Future<void> _handleSignOut() async {
-    try {
-      // Cerrar sesión en Firebase
-      final authService = FirebaseAuthService();
-      final result = await authService.signOut();
-
-      if (!result['success']) {
-        throw Exception(result['message']);
-      }
-
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          Routes.signIn,
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cerrar sesión: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Configuración',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Opción de cerrar sesión
-          ListTile(
-            leading: const Icon(
-              Icons.logout,
-              color: Colors.red,
-            ),
-            title: const Text(
-              'Cerrar sesión',
-              style: TextStyle(color: Colors.red),
-            ),
-            onTap: () async {
-              Navigator.pop(context); // Cerrar bottom sheet
-
-              // Confirmar antes de cerrar sesión
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Cerrar sesión'),
-                  content: const Text('¿Estás seguro que deseas cerrar sesión?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text(
-                        'Cerrar sesión',
-                        style: TextStyle(color: Colors.red),
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                     ),
                   ],
                 ),
-              );
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 18, color: AppColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-              if (confirm == true && mounted) {
-                _handleSignOut();
-              }
-            },
-            contentPadding: EdgeInsets.zero,
+class _QuickAccessCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickAccessCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DojoCard(
+      style: DojoCardStyle.normal,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color, size: 26),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
