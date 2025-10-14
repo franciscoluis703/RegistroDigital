@@ -1,8 +1,6 @@
 // lib/app/presentation/modules/home/views/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/avatar_genero_widget.dart';
 import '../../../themes/app_colors.dart';
@@ -78,13 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   };
 
-  // Lista de actividades más usadas
-  List<String> _actividadesFrecuentes = [];
-
   @override
   void initState() {
     super.initState();
-    _cargarActividadesFrecuentes();
     _cargarDatosUsuario();
   }
 
@@ -95,49 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _cargarActividadesFrecuentes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final actividadesJson = prefs.getString('actividades_uso');
-
-    if (actividadesJson != null) {
-      final Map<String, dynamic> usoActividades = json.decode(actividadesJson);
-      final actividadesOrdenadas = usoActividades.entries.toList()
-        ..sort((a, b) => (b.value as int).compareTo(a.value as int));
-
-      setState(() {
-        _actividadesFrecuentes = actividadesOrdenadas
-            .map((e) => e.key)
-            .take(4)
-            .toList();
-      });
-    } else {
-      setState(() {
-        _actividadesFrecuentes = [
-          'asistencia',
-          'calificaciones',
-          'notas',
-          'evidencias',
-        ];
-      });
-    }
-  }
-
-  Future<void> _registrarUsoActividad(String actividadId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final actividadesJson = prefs.getString('actividades_uso');
-
-    Map<String, dynamic> usoActividades = {};
-    if (actividadesJson != null) {
-      usoActividades = json.decode(actividadesJson);
-    }
-
-    usoActividades[actividadId] = (usoActividades[actividadId] ?? 0) + 1;
-    await prefs.setString('actividades_uso', json.encode(usoActividades));
-    await _cargarActividadesFrecuentes();
-  }
-
   void _navegarAActividad(String actividadId, String ruta) {
-    _registrarUsoActividad(actividadId);
     Navigator.pushNamed(context, ruta);
   }
 
@@ -302,45 +254,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Accesos rápidos
-                Text(
-                  'Accesos Rápidos',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 16),
-
-                _actividadesFrecuentes.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.2,
-                        ),
-                        itemCount: _actividadesFrecuentes.length,
-                        itemBuilder: (context, index) {
-                          final actividadId = _actividadesFrecuentes[index];
-                          final actividad = _actividadesDisponibles[actividadId];
-                          if (actividad == null) return const SizedBox.shrink();
-
-                          return _QuickAccessCard(
-                            icon: actividad['icon'] as IconData,
-                            label: actividad['label'] as String,
-                            color: actividad['color'] as Color,
-                            onTap: () => _navegarAActividad(
-                              actividadId,
-                              actividad['route'] as String,
-                            ),
-                          );
-                        },
-                      ),
-                const SizedBox(height: 32),
-
                 // Todas las actividades
                 Text(
                   'Más Opciones',
@@ -439,54 +352,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textTertiary),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _QuickAccessCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickAccessCard({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DuoCard(
-      style: DuoCardStyle.flat,
-      padding: const EdgeInsets.all(12),
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     );
   }
