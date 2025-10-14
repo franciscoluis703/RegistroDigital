@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// 🎨 Tema Educativo ClassDojo Style
+/// 🦉 Tema Duolingo
 ///
-/// Sistema de diseño completo con tipografía redondeada,
-/// colores vibrantes y componentes amigables para educación.
+/// Sistema de diseño limpio, vibrante y moderno inspirado en Duolingo.
+/// Enfoque en botones grandes, bordes redondeados y sombras pronunciadas.
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
@@ -34,63 +34,67 @@ class AppTheme {
       // Background
       scaffoldBackgroundColor: AppColors.background,
 
-      // AppBar Theme - Estilo ClassDojo con gradiente suave
+      // AppBar Theme - Estilo Duolingo limpio
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         shadowColor: AppColors.divider,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: GoogleFonts.nunito(
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
-          letterSpacing: 0.5,
+          letterSpacing: 0,
         ),
         iconTheme: const IconThemeData(
-          color: AppColors.primary,
+          color: AppColors.textSecondary,
           size: 24,
         ),
         actionsIconTheme: const IconThemeData(
-          color: AppColors.primary,
+          color: AppColors.textSecondary,
           size: 24,
         ),
       ),
 
-      // Card Theme - Esquinas muy redondeadas estilo ClassDojo
+      // Card Theme - Bordes redondeados grandes estilo Duolingo
       cardTheme: CardThemeData(
-        elevation: 3,
-        shadowColor: AppColors.textPrimary.withValues(alpha: 0.08),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20), // Más redondeado
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(
+            color: AppColors.border,
+            width: 2,
+          ),
         ),
         color: AppColors.surface,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
         surfaceTintColor: Colors.transparent,
       ),
 
-      // Elevated Button Theme - Botones vibrantes y redondeados
+      // Elevated Button Theme - Botones grandes con sombra inferior
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          elevation: 4,
-          shadowColor: AppColors.primary.withValues(alpha: 0.3),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-          minimumSize: const Size(120, 54),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          minimumSize: const Size(120, 50),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28), // Muy redondeado
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(
+              color: AppColors.shadowPrimary,
+              width: 0,
+            ),
           ),
           textStyle: GoogleFonts.nunito(
             fontSize: 17,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ).copyWith(
-          overlayColor: WidgetStateProperty.all(
-            Colors.white.withValues(alpha: 0.2),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -98,15 +102,15 @@ class AppTheme {
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          foregroundColor: AppColors.secondary,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.nunito(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -115,28 +119,29 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 2.5),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-          minimumSize: const Size(120, 54),
+          side: const BorderSide(color: AppColors.border, width: 2),
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          minimumSize: const Size(120, 50),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: GoogleFonts.nunito(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
+            letterSpacing: 0,
           ),
         ),
       ),
 
       // FloatingActionButton Theme
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        elevation: 6,
-        highlightElevation: 8,
+        elevation: 0,
+        highlightElevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         sizeConstraints: BoxConstraints(
           minWidth: 56,
@@ -144,22 +149,22 @@ class AppTheme {
         ),
       ),
 
-      // Input Decoration Theme - Inputs suaves y redondeados
+      // Input Decoration Theme - Inputs estilo Duolingo
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.divider, width: 2),
+          borderSide: const BorderSide(color: AppColors.border, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.divider, width: 2),
+          borderSide: const BorderSide(color: AppColors.border, width: 2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2.5),
+          borderSide: const BorderSide(color: AppColors.secondary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -167,31 +172,31 @@ class AppTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.error, width: 2.5),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         labelStyle: GoogleFonts.nunito(
-          fontSize: 15,
+          fontSize: 16,
           color: AppColors.textSecondary,
           fontWeight: FontWeight.w600,
         ),
         hintStyle: GoogleFonts.nunito(
-          fontSize: 15,
+          fontSize: 16,
           color: AppColors.textTertiary,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
         errorStyle: GoogleFonts.nunito(
-          fontSize: 13,
+          fontSize: 14,
           color: AppColors.error,
           fontWeight: FontWeight.w600,
         ),
         floatingLabelStyle: GoogleFonts.nunito(
-          fontSize: 16,
-          color: AppColors.primary,
+          fontSize: 14,
+          color: AppColors.secondary,
           fontWeight: FontWeight.w700,
         ),
       ),
 
-      // Chip Theme - Chips coloridos y redondeados
+      // Chip Theme - Chips redondeados
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.primarySurface,
         labelStyle: GoogleFonts.nunito(
@@ -199,9 +204,9 @@ class AppTheme {
           fontSize: 14,
           fontWeight: FontWeight.w700,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
         side: const BorderSide(color: Colors.transparent),
       ),
@@ -209,8 +214,8 @@ class AppTheme {
       // Divider Theme
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
-        thickness: 1,
-        space: 1,
+        thickness: 2,
+        space: 2,
       ),
 
       // Icon Theme
@@ -219,68 +224,76 @@ class AppTheme {
         size: 24,
       ),
 
-      // SnackBar Theme - Notificaciones amigables
+      // SnackBar Theme
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
         contentTextStyle: GoogleFonts.nunito(
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
-        elevation: 6,
+        elevation: 0,
       ),
 
-      // Dialog Theme - Diálogos redondeados
+      // Dialog Theme - Diálogos limpios
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
-        elevation: 12,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(
+            color: AppColors.border,
+            width: 2,
+          ),
         ),
         titleTextStyle: GoogleFonts.nunito(
           fontSize: 22,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
-          letterSpacing: 0.3,
+          letterSpacing: 0,
         ),
         contentTextStyle: GoogleFonts.nunito(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
           height: 1.5,
         ),
       ),
 
       // Bottom Sheet Theme
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surface,
-        elevation: 12,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          side: BorderSide(
+            color: AppColors.border,
+            width: 2,
+          ),
         ),
       ),
 
-      // Text Theme - Tipografía Nunito redondeada y amigable
+      // Text Theme - Tipografía Nunito
       textTheme: GoogleFonts.nunitoTextTheme(
         const TextTheme(
-          // Display - Para títulos muy grandes (splash, bienvenida)
+          // Display - Títulos grandes
           displayLarge: TextStyle(
-            fontSize: 48,
+            fontSize: 56,
             fontWeight: FontWeight.w900,
             color: AppColors.textPrimary,
             height: 1.1,
-            letterSpacing: -0.5,
+            letterSpacing: -1,
           ),
           displayMedium: TextStyle(
-            fontSize: 40,
+            fontSize: 45,
             fontWeight: FontWeight.w900,
             color: AppColors.textPrimary,
-            height: 1.1,
-            letterSpacing: -0.3,
+            height: 1.15,
+            letterSpacing: 0,
           ),
           displaySmall: TextStyle(
             fontSize: 36,
@@ -295,14 +308,14 @@ class AppTheme {
             fontSize: 32,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
-            height: 1.2,
+            height: 1.25,
             letterSpacing: 0,
           ),
           headlineMedium: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
-            height: 1.2,
+            height: 1.3,
             letterSpacing: 0,
           ),
           headlineSmall: TextStyle(
@@ -313,78 +326,78 @@ class AppTheme {
             letterSpacing: 0,
           ),
 
-          // Titles - Títulos de cards y elementos
+          // Titles - Títulos de cards
           titleLarge: TextStyle(
-            fontSize: 20,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            height: 1.3,
+            letterSpacing: 0,
+          ),
+          titleMedium: TextStyle(
+            fontSize: 19,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
             height: 1.4,
-            letterSpacing: 0.15,
+            letterSpacing: 0,
           ),
-          titleMedium: TextStyle(
+          titleSmall: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
             height: 1.4,
-            letterSpacing: 0.15,
-          ),
-          titleSmall: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
-            height: 1.4,
-            letterSpacing: 0.1,
+            letterSpacing: 0,
           ),
 
           // Body - Texto de contenido
           bodyLarge: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontSize: 19,
+            fontWeight: FontWeight.w400,
             color: AppColors.textPrimary,
             height: 1.5,
-            letterSpacing: 0.15,
+            letterSpacing: 0,
           ),
           bodyMedium: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
+            fontSize: 17,
+            fontWeight: FontWeight.w400,
             color: AppColors.textSecondary,
             height: 1.5,
-            letterSpacing: 0.25,
+            letterSpacing: 0,
           ),
           bodySmall: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
             color: AppColors.textTertiary,
             height: 1.5,
-            letterSpacing: 0.25,
+            letterSpacing: 0,
           ),
 
           // Labels - Etiquetas y botones
           labelLarge: TextStyle(
-            fontSize: 15,
+            fontSize: 17,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
-            letterSpacing: 0.5,
+            letterSpacing: 0,
           ),
           labelMedium: TextStyle(
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
-            letterSpacing: 0.5,
+            letterSpacing: 0,
           ),
           labelSmall: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: AppColors.textTertiary,
-            letterSpacing: 0.5,
+            letterSpacing: 0,
           ),
         ),
       ),
 
-      // Font Family - Nunito como fuente principal
+      // Font Family - Nunito
       fontFamily: GoogleFonts.nunito().fontFamily,
 
-      // Progres Indicator Theme
+      // Progress Indicator Theme
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.primary,
         circularTrackColor: AppColors.primarySurface,
@@ -395,13 +408,13 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.secondary;
+            return AppColors.primary;
           }
           return AppColors.textTertiary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.secondaryLight;
+            return AppColors.primaryLight;
           }
           return AppColors.divider;
         }),
@@ -411,13 +424,17 @@ class AppTheme {
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.secondary;
+            return AppColors.primary;
           }
           return Colors.transparent;
         }),
         checkColor: WidgetStateProperty.all(Colors.white),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        side: const BorderSide(
+          color: AppColors.border,
+          width: 2,
         ),
       ),
 
@@ -425,7 +442,7 @@ class AppTheme {
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.secondary;
+            return AppColors.primary;
           }
           return AppColors.textTertiary;
         }),
@@ -438,6 +455,9 @@ class AppTheme {
         thumbColor: AppColors.primary,
         overlayColor: AppColors.primary.withValues(alpha: 0.2),
         valueIndicatorColor: AppColors.primary,
+        trackHeight: 8,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+        overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
         valueIndicatorTextStyle: GoogleFonts.nunito(
           fontSize: 14,
           fontWeight: FontWeight.w700,

@@ -51,7 +51,8 @@
       "Bash(firebase hosting:channel:list:*)",
       "Bash(git checkout:*)",
       "Bash(mkdir:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "WebFetch(domain:es.duolingo.com)"
     ],
     "deny": [],
     "ask": []

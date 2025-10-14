@@ -176,7 +176,7 @@ class _DojoCardState extends State<DojoCard>
           backgroundColor: Colors.transparent,
           shadowColor: AppColors.pink.withValues(alpha: 0.2),
           borderRadius: 20,
-          gradient: AppColors.celebrationGradient,
+          gradient: AppColors.premiumGradient,
         );
     }
   }

@@ -1,187 +1,200 @@
 import 'package:flutter/material.dart';
 
-/// 🎨 Sistema de Colores Educativo Inspirado en ClassDojo
+/// 🦉 Sistema de Colores Duolingo
 ///
-/// Paleta vibrante, cálida y amigable diseñada para entornos educativos.
-/// Colores suaves con acentos brillantes que transmiten alegría y motivación.
+/// Paleta vibrante, limpia y moderna inspirada en Duolingo.
+/// Colores brillantes con alto contraste que transmiten energía y motivación.
 class AppColors {
   // ============================================
-  // 🌈 COLORES PRINCIPALES - Paleta ClassDojo Style
+  // 🌈 COLORES PRINCIPALES - Paleta Duolingo
   // ============================================
 
-  /// Color primario - Azul cielo vibrante (inspirado en el cielo del aprendizaje)
-  static const Color primary = Color(0xFF5B9FED); // #5B9FED - Azul ClassDojo
-  static const Color primaryLight = Color(0xFF8BC4FF); // Versión más clara
-  static const Color primaryDark = Color(0xFF2E7DD1); // Versión más oscura
-  static const Color primarySurface = Color(0xFFE8F4FF); // Fondo azul muy suave
+  /// Color primario - Verde Duolingo (éxito y aprendizaje)
+  static const Color primary = Color(0xFF58CC02); // #58CC02 - Verde Duolingo
+  static const Color primaryLight = Color(0xFF89E34A); // Verde más claro
+  static const Color primaryDark = Color(0xFF3DA700); // Verde más oscuro
+  static const Color primarySurface = Color(0xFFE7F9E1); // Fondo verde muy suave
 
-  /// Color secundario - Verde menta (crecimiento y éxito)
-  static const Color secondary = Color(0xFF6BCF8F); // #6BCF8F - Verde menta
-  static const Color secondaryLight = Color(0xFF9BE2B0); // Verde claro
-  static const Color secondaryDark = Color(0xFF4BA86F); // Verde oscuro
-  static const Color secondarySurface = Color(0xFFE7F9EE); // Fondo verde suave
+  /// Color secundario - Azul Duolingo (información y navegación)
+  static const Color secondary = Color(0xFF1CB0F6); // #1CB0F6 - Azul brillante
+  static const Color secondaryLight = Color(0xFF6DCFF6); // Azul claro
+  static const Color secondaryDark = Color(0xFF0A87D1); // Azul oscuro
+  static const Color secondarySurface = Color(0xFFE0F4FF); // Fondo azul suave
 
-  /// Color terciario - Naranja alegre (energía y creatividad)
-  static const Color tertiary = Color(0xFFFFAB40); // #FFAB40 - Naranja brillante
-  static const Color tertiaryLight = Color(0xFFFFCC80); // Naranja claro
-  static const Color tertiaryDark = Color(0xFFFF9100); // Naranja oscuro
-  static const Color tertiarySurface = Color(0xFFFFF3E0); // Fondo naranja suave
+  /// Color terciario - Amarillo Duolingo (racha y logros)
+  static const Color tertiary = Color(0xFFFF9600); // #FF9600 - Naranja/Amarillo
+  static const Color tertiaryLight = Color(0xFFFFBF00); // Amarillo brillante
+  static const Color tertiaryDark = Color(0xFFE67E00); // Naranja oscuro
+  static const Color tertiarySurface = Color(0xFFFFF4E0); // Fondo amarillo suave
 
-  /// Color de acento - Violeta mágico (creatividad e imaginación)
-  static const Color accent = Color(0xFFB388FF); // #B388FF - Violeta pastel
-  static const Color accentLight = Color(0xFFD1C4E9); // Violeta muy claro
-  static const Color accentDark = Color(0xFF7C4DFF); // Violeta oscuro
-  static const Color accentSurface = Color(0xFFF3E5F5); // Fondo violeta suave
+  /// Color de acento - Violeta Duolingo (premium y especial)
+  static const Color accent = Color(0xFFCE82FF); // #CE82FF - Violeta brillante
+  static const Color accentLight = Color(0xFFE5B8FF); // Violeta claro
+  static const Color accentDark = Color(0xFFB554FF); // Violeta oscuro
+  static const Color accentSurface = Color(0xFFF9F0FF); // Fondo violeta suave
 
-  /// Color complementario - Rosa cálido (diversión y entusiasmo)
-  static const Color pink = Color(0xFFFF6B9D); // #FF6B9D - Rosa vibrante
-  static const Color pinkLight = Color(0xFFFF8FB8); // Rosa claro
-  static const Color pinkDark = Color(0xFFE91E63); // Rosa oscuro
-  static const Color pinkSurface = Color(0xFFFCE4EC); // Fondo rosa suave
-
-  /// Color amarillo - Sol y positividad
-  static const Color yellow = Color(0xFFFFD54F); // #FFD54F - Amarillo suave
-  static const Color yellowLight = Color(0xFFFFE57F); // Amarillo claro
-  static const Color yellowDark = Color(0xFFFFC107); // Amarillo oscuro
-  static const Color yellowSurface = Color(0xFFFFFDE7); // Fondo amarillo suave
+  /// Color rosa - Rosa Duolingo (amor y motivación)
+  static const Color pink = Color(0xFFFF73B9); // #FF73B9 - Rosa brillante
+  static const Color pinkLight = Color(0xFFFFAAD5); // Rosa claro
+  static const Color pinkDark = Color(0xFFE6479B); // Rosa oscuro
+  static const Color pinkSurface = Color(0xFFFFEFF7); // Fondo rosa suave
 
   // ============================================
   // ✅ ESTADOS SEMÁNTICOS
   // ============================================
 
-  /// Éxito (aprobado, correcto, completado)
-  static const Color success = Color(0xFF6BCF8F); // Verde menta
-  static const Color successLight = Color(0xFF9BE2B0);
-  static const Color successDark = Color(0xFF4BA86F);
-  static const Color successSurface = Color(0xFFE7F9EE);
+  /// Éxito (correcto, completado)
+  static const Color success = Color(0xFF58CC02); // Verde Duolingo
+  static const Color successLight = Color(0xFF89E34A);
+  static const Color successDark = Color(0xFF3DA700);
+  static const Color successSurface = Color(0xFFE7F9E1);
 
-  /// Advertencia (atención, pendiente)
-  static const Color warning = Color(0xFFFFAB40); // Naranja
-  static const Color warningLight = Color(0xFFFFCC80);
-  static const Color warningDark = Color(0xFFFF9100);
-  static const Color warningSurface = Color(0xFFFFF3E0);
+  /// Advertencia (atención, revisar)
+  static const Color warning = Color(0xFFFF9600); // Naranja/Amarillo
+  static const Color warningLight = Color(0xFFFFBF00);
+  static const Color warningDark = Color(0xFFE67E00);
+  static const Color warningSurface = Color(0xFFFFF4E0);
 
-  /// Error (incorrecto, fallo, eliminado)
-  static const Color error = Color(0xFFFF6B6B); // Rojo suave
-  static const Color errorLight = Color(0xFFFF8A8A);
-  static const Color errorDark = Color(0xFFE53935);
-  static const Color errorSurface = Color(0xFFFFEBEE);
+  /// Error (incorrecto, fallo)
+  static const Color error = Color(0xFFFF4B4B); // #FF4B4B - Rojo Duolingo
+  static const Color errorLight = Color(0xFFFF7A7A);
+  static const Color errorDark = Color(0xFFEA2B2B);
+  static const Color errorSurface = Color(0xFFFFE9E9);
 
-  /// Información (notas, consejos, ayuda)
-  static const Color info = Color(0xFF5B9FED); // Azul cielo
-  static const Color infoLight = Color(0xFF8BC4FF);
-  static const Color infoDark = Color(0xFF2E7DD1);
-  static const Color infoSurface = Color(0xFFE8F4FF);
+  /// Información (consejos, ayuda)
+  static const Color info = Color(0xFF1CB0F6); // Azul Duolingo
+  static const Color infoLight = Color(0xFF6DCFF6);
+  static const Color infoDark = Color(0xFF0A87D1);
+  static const Color infoSurface = Color(0xFFE0F4FF);
 
   // ============================================
   // 📝 TEXTOS Y NEUTRALES
   // ============================================
 
-  /// Texto principal - Gris oscuro cálido
-  static const Color textPrimary = Color(0xFF2D3748); // #2D3748 - Gris oscuro
+  /// Texto principal - Gris oscuro (casi negro)
+  static const Color textPrimary = Color(0xFF3C3C3C); // #3C3C3C - Gris muy oscuro
 
   /// Texto secundario - Gris medio
-  static const Color textSecondary = Color(0xFF718096); // #718096 - Gris medio
+  static const Color textSecondary = Color(0xFF777777); // #777777 - Gris medio
 
   /// Texto terciario - Gris claro
-  static const Color textTertiary = Color(0xFFA0AEC0); // #A0AEC0 - Gris claro
+  static const Color textTertiary = Color(0xFFAFAFAF); // #AFAFAF - Gris claro
 
   /// Texto deshabilitado
-  static const Color textDisabled = Color(0xFFCBD5E0); // #CBD5E0 - Gris muy claro
+  static const Color textDisabled = Color(0xFFE5E5E5); // #E5E5E5 - Gris muy claro
+
+  /// Texto en fondos oscuros
+  static const Color textOnDark = Color(0xFFFFFFFF); // Blanco
 
   // ============================================
   // 🎭 FONDOS Y SUPERFICIES
   // ============================================
 
-  /// Fondo principal de la app - Azul cielo muy suave
-  static const Color background = Color(0xFFF7FAFC); // #F7FAFC - Casi blanco con tinte azul
+  /// Fondo principal de la app - Blanco limpio
+  static const Color background = Color(0xFFFFFFFF); // #FFFFFF - Blanco puro
 
-  /// Superficie de cards y contenedores - Blanco puro
+  /// Fondo secundario - Gris muy claro
+  static const Color backgroundSecondary = Color(0xFFF7F7F7); // #F7F7F7 - Casi blanco
+
+  /// Superficie de cards y contenedores - Blanco
   static const Color surface = Color(0xFFFFFFFF); // #FFFFFF - Blanco
 
-  /// Superficie alternativa - Gris muy claro
-  static const Color surfaceVariant = Color(0xFFF1F5F9); // #F1F5F9 - Gris muy claro
+  /// Superficie alternativa - Gris muy suave
+  static const Color surfaceVariant = Color(0xFFFAFAFA); // #FAFAFA - Gris muy claro
 
   /// Divisores y bordes
-  static const Color divider = Color(0xFFE2E8F0); // #E2E8F0 - Gris claro para bordes
+  static const Color divider = Color(0xFFE5E5E5); // #E5E5E5 - Gris claro para bordes
 
-  /// Superficie con elevación (modales, diálogos)
-  static const Color surfaceElevated = Color(0xFFFFFFFF);
+  /// Bordes oscuros (estilo Duolingo con borde pronunciado)
+  static const Color border = Color(0xFFE5E5E5); // Borde claro
+  static const Color borderDark = Color(0xFFCECECE); // Borde medio
+  static const Color borderHeavy = Color(0xFFAFAFAF); // Borde pronunciado
 
   // ============================================
   // 🎓 COLORES TEMÁTICOS EDUCATIVOS
   // ============================================
 
   /// Asistencia - Verde éxito
-  static const Color asistencia = Color(0xFF6BCF8F);
-  static const Color asistenciaSurface = Color(0xFFE7F9EE);
+  static const Color asistencia = Color(0xFF58CC02);
+  static const Color asistenciaSurface = Color(0xFFE7F9E1);
 
   /// Calificaciones - Azul académico
-  static const Color calificaciones = Color(0xFF5B9FED);
-  static const Color calificacionesSurface = Color(0xFFE8F4FF);
+  static const Color calificaciones = Color(0xFF1CB0F6);
+  static const Color calificacionesSurface = Color(0xFFE0F4FF);
 
-  /// Promoción de grado - Violeta celebración
-  static const Color promocion = Color(0xFFB388FF);
-  static const Color promocionSurface = Color(0xFFF3E5F5);
+  /// Promoción de grado - Violeta especial
+  static const Color promocion = Color(0xFFCE82FF);
+  static const Color promocionSurface = Color(0xFFF9F0FF);
 
   /// Datos generales - Naranja información
-  static const Color datosGenerales = Color(0xFFFFAB40);
-  static const Color datosGeneralesSurface = Color(0xFFFFF3E0);
+  static const Color datosGenerales = Color(0xFFFF9600);
+  static const Color datosGeneralesSurface = Color(0xFFFFF4E0);
 
   /// Calendario escolar - Rosa eventos
-  static const Color calendario = Color(0xFFFF6B9D);
-  static const Color calendarioSurface = Color(0xFFFCE4EC);
+  static const Color calendario = Color(0xFFFF73B9);
+  static const Color calendarioSurface = Color(0xFFFFEFF7);
 
   /// Horario de clases - Amarillo organización
-  static const Color horario = Color(0xFFFFD54F);
-  static const Color horarioSurface = Color(0xFFFFFDE7);
+  static const Color horario = Color(0xFFFFBF00);
+  static const Color horarioSurface = Color(0xFFFFF9E6);
 
-  /// Evidencias y documentos - Teal documentación
-  static const Color evidencias = Color(0xFF26A69A);
-  static const Color evidenciasSurface = Color(0xFFE0F2F1);
+  /// Evidencias y documentos - Azul claro
+  static const Color evidencias = Color(0xFF1CB0F6);
+  static const Color evidenciasSurface = Color(0xFFE0F4FF);
 
-  /// Notas y observaciones - Índigo reflexión
-  static const Color notas = Color(0xFF5C6BC0);
-  static const Color notasSurface = Color(0xFFE8EAF6);
+  /// Notas y observaciones - Verde suave
+  static const Color notas = Color(0xFF58CC02);
+  static const Color notasSurface = Color(0xFFE7F9E1);
 
   // ============================================
-  // 🌟 GRADIENTES DECORATIVOS (Para headers y elementos especiales)
+  // 🌟 GRADIENTES DECORATIVOS
   // ============================================
 
-  /// Gradiente primario (azul a azul claro)
+  /// Gradiente primario (verde Duolingo)
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF5B9FED), Color(0xFF8BC4FF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    colors: [Color(0xFF58CC02), Color(0xFF89E34A)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 
-  /// Gradiente secundario (verde a verde claro)
+  /// Gradiente secundario (azul Duolingo)
   static const LinearGradient secondaryGradient = LinearGradient(
-    colors: [Color(0xFF6BCF8F), Color(0xFF9BE2B0)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    colors: [Color(0xFF1CB0F6), Color(0xFF6DCFF6)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 
-  /// Gradiente de éxito (verde menta a turquesa)
+  /// Gradiente de éxito (verde brillante)
   static const LinearGradient successGradient = LinearGradient(
-    colors: [Color(0xFF6BCF8F), Color(0xFF4ECDC4)],
+    colors: [Color(0xFF58CC02), Color(0xFF3DA700)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  /// Gradiente de celebración (rosa a naranja)
-  static const LinearGradient celebrationGradient = LinearGradient(
-    colors: [Color(0xFFFF6B9D), Color(0xFFFFAB40)],
+  /// Gradiente premium (violeta a rosa)
+  static const LinearGradient premiumGradient = LinearGradient(
+    colors: [Color(0xFFCE82FF), Color(0xFFFF73B9)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  /// Gradiente mágico (violeta a azul)
-  static const LinearGradient magicGradient = LinearGradient(
-    colors: [Color(0xFFB388FF), Color(0xFF5B9FED)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+  /// Gradiente de racha (amarillo a naranja)
+  static const LinearGradient streakGradient = LinearGradient(
+    colors: [Color(0xFFFFBF00), Color(0xFFFF9600)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
+
+  // ============================================
+  // 🎨 SOMBRAS (Estilo Duolingo - Sombras pronunciadas)
+  // ============================================
+
+  /// Sombra suave para botones (inferior)
+  static const Color shadowPrimary = Color(0xFF46A302); // Verde oscuro
+  static const Color shadowSecondary = Color(0xFF0E87CC); // Azul oscuro
+  static const Color shadowTertiary = Color(0xFFD17000); // Naranja oscuro
+  static const Color shadowError = Color(0xFFCE2B2B); // Rojo oscuro
+  static const Color shadowGray = Color(0xFFCECECE); // Gris para sombras neutras
 
   // ============================================
   // 🎨 UTILIDADES

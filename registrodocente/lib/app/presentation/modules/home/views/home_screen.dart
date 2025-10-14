@@ -6,13 +6,12 @@ import 'dart:convert';
 import '../../../../core/providers/user_provider.dart';
 import '../../../widgets/avatar_genero_widget.dart';
 import '../../../themes/app_colors.dart';
-import '../../../widgets/common/dojo_card.dart';
-import '../../../widgets/common/dojo_badge.dart';
-import '../../../widgets/common/dojo_button.dart';
+import '../../../widgets/common/duo_card.dart';
+import '../../../widgets/common/duo_button.dart';
 import '../../../../../app/presentation/routes/routes.dart';
 import '../../../../data/services/firebase/firebase_auth_service.dart';
 
-/// 🎨 Pantalla de Home/Dashboard - Diseño ClassDojo
+/// 🦉 Pantalla de Home/Dashboard - Diseño Duolingo
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -39,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.school,
       'label': 'Promoción',
       'route': '/promocion_grado',
-      'color': AppColors.secondary,
+      'color': AppColors.accent,
     },
     'horario': {
       'icon': Icons.access_time,
@@ -51,13 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.calendar_today,
       'label': 'Calendario',
       'route': '/calendario-escolar',
-      'color': AppColors.info,
+      'color': AppColors.pink,
     },
     'cursos': {
       'icon': Icons.class_outlined,
       'label': 'Cursos',
       'route': '/cursos',
-      'color': AppColors.error,
+      'color': AppColors.secondary,
     },
     'perfil': {
       'icon': Icons.person,
@@ -69,13 +68,13 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.note_add,
       'label': 'Notas',
       'route': '/notas',
-      'color': AppColors.accent,
+      'color': AppColors.primary,
     },
     'evidencias': {
       'icon': Icons.photo_library,
       'label': 'Evidencias',
       'route': '/evidencias',
-      'color': AppColors.info,
+      'color': AppColors.secondary,
     },
   };
 
@@ -108,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _actividadesFrecuentes = actividadesOrdenadas
             .map((e) => e.key)
-            .take(3)
+            .take(4)
             .toList();
       });
     } else {
@@ -117,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'asistencia',
           'calificaciones',
           'notas',
+          'evidencias',
         ];
       });
     }
@@ -145,26 +145,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.logout, color: AppColors.error),
-            SizedBox(width: 12),
-            Text('Cerrar sesión'),
-          ],
-        ),
+        title: const Text('Cerrar sesión'),
         content: const Text('¿Estás seguro que deseas cerrar sesión?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          DuoButton(
+            text: 'Cerrar sesión',
+            style: DuoButtonStyle.error,
+            size: DuoButtonSize.small,
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: const Text('Cerrar sesión'),
           ),
         ],
       ),
@@ -203,13 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Row(
-          children: const [
-            Icon(Icons.menu_book, size: 24),
-            SizedBox(width: 8),
-            Text('Registro Docente'),
-          ],
-        ),
+        title: const Text('Registro Docente'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -221,19 +207,19 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tarjeta de bienvenida con diseño ClassDojo
-                DojoCard(
-                  style: DojoCardStyle.gradient,
-                  padding: const EdgeInsets.all(24),
+                // Tarjeta de bienvenida limpia estilo Duolingo
+                DuoCard(
+                  style: DuoCardStyle.normal,
+                  padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
                       GestureDetector(
                         onTap: () => _navegarAActividad('perfil', '/perfil'),
-                        child: const AvatarGeneroWidget(radius: 35),
+                        child: const AvatarGeneroWidget(radius: 32),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -243,9 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '¡Hola, ${userProvider.nombre.isEmpty ? 'Usuario' : userProvider.nombre.split(' ')[0]}! 👋',
+                                  '¡Hola, ${userProvider.nombre.isEmpty ? 'Usuario' : userProvider.nombre.split(' ')[0]}!',
                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        color: Colors.white,
                                         fontWeight: FontWeight.w800,
                                       ),
                                 ),
@@ -254,9 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   userProvider.centroEducativo.isEmpty
                                       ? 'Centro Educativo'
                                       : userProvider.centroEducativo,
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.9),
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -270,27 +253,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Botón prominente de Cursos con diseño destacado
-                DojoCard(
-                  style: DojoCardStyle.gradient,
+                // Botón de Cursos prominente estilo Duolingo
+                DuoCard(
+                  style: DuoCardStyle.primary,
                   padding: const EdgeInsets.all(20),
                   onTap: () => _navegarAActividad('cursos', '/cursos'),
                   child: Row(
                     children: [
                       Container(
-                        width: 64,
-                        height: 64,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.school,
                           color: Colors.white,
-                          size: 36,
+                          size: 32,
                         ),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,26 +281,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               'Mis Cursos',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
                                   ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
-                              'Gestiona tus grupos y estudiantes',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              'Gestiona tus grupos',
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
                       ),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_ios,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        size: 24,
+                        size: 20,
+                        color: AppColors.primary,
                       ),
                     ],
                   ),
@@ -325,90 +303,81 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 32),
 
                 // Accesos rápidos
-                Row(
-                  children: [
-                    const Icon(Icons.flash_on, color: AppColors.tertiary, size: 24),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Accesos Rápidos',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                  ],
+                Text(
+                  'Accesos Rápidos',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 const SizedBox(height: 16),
 
                 _actividadesFrecuentes.isEmpty
                     ? const Center(child: CircularProgressIndicator())
-                    : Row(
-                        children: _actividadesFrecuentes.map((actividadId) {
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.2,
+                        ),
+                        itemCount: _actividadesFrecuentes.length,
+                        itemBuilder: (context, index) {
+                          final actividadId = _actividadesFrecuentes[index];
                           final actividad = _actividadesDisponibles[actividadId];
                           if (actividad == null) return const SizedBox.shrink();
 
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: _QuickAccessCard(
-                                icon: actividad['icon'] as IconData,
-                                label: actividad['label'] as String,
-                                color: actividad['color'] as Color,
-                                onTap: () => _navegarAActividad(
-                                  actividadId,
-                                  actividad['route'] as String,
-                                ),
-                              ),
+                          return _QuickAccessCard(
+                            icon: actividad['icon'] as IconData,
+                            label: actividad['label'] as String,
+                            color: actividad['color'] as Color,
+                            onTap: () => _navegarAActividad(
+                              actividadId,
+                              actividad['route'] as String,
                             ),
                           );
-                        }).toList(),
+                        },
                       ),
                 const SizedBox(height: 32),
 
                 // Todas las actividades
-                Row(
-                  children: [
-                    const Icon(Icons.apps, color: AppColors.secondary, size: 24),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Todas las Actividades',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                  ],
+                Text(
+                  'Más Opciones',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 const SizedBox(height: 16),
 
                 _buildActivityCard(
                   'Bloc de Notas',
-                  'Registra notas rápidas y observaciones',
+                  'Registra notas rápidas',
                   Icons.note_add,
-                  AppColors.accent,
+                  AppColors.primary,
                   () => _navegarAActividad('notas', '/notas'),
                 ),
                 _buildActivityCard(
                   'Evidencias',
                   'Gestiona fotos y documentos',
                   Icons.photo_library,
-                  AppColors.info,
+                  AppColors.secondary,
                   () => _navegarAActividad('evidencias', '/evidencias'),
                 ),
                 _buildActivityCard(
                   'Mi Perfil',
-                  'Actualiza tu información personal',
+                  'Actualiza tu información',
                   Icons.person,
-                  AppColors.secondary,
+                  AppColors.accent,
                   () => _navegarAActividad('perfil', '/perfil'),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Footer con versión
+                // Footer limpio
                 Center(
                   child: Text(
-                    'Versión 1.0.0 • ClassDojo Style',
+                    'Versión 1.0.0',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -432,46 +401,43 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: DojoCard(
-        style: DojoCardStyle.normal,
+      child: DuoCard(
+        style: DuoCardStyle.flat,
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(icon, color: color, size: 28),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                  ],
-                ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
+                ],
               ),
-              const Icon(Icons.arrow_forward_ios, size: 18, color: AppColors.textTertiary),
-            ],
-          ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textTertiary),
+          ],
         ),
       ),
     );
@@ -493,29 +459,28 @@ class _QuickAccessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DojoCard(
-      style: DojoCardStyle.normal,
-      padding: const EdgeInsets.all(12),
+    return DuoCard(
+      style: DuoCardStyle.flat,
+      padding: const EdgeInsets.all(16),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 28),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                  fontSize: 12,
+                  fontSize: 15,
                 ),
             textAlign: TextAlign.center,
             maxLines: 2,
